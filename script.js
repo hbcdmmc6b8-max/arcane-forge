@@ -149,7 +149,12 @@ let S = {
 
   forge: [],
 
-  ward: 0
+  ward: 0,
+
+  // DEATH SYSTEM
+  dead: false,
+  deathTimer: 0,
+  deathScreen: false
 };
 
 Object.entries(base).forEach(([name, data]) => {
@@ -287,6 +292,7 @@ function updateHUD() {
     .textContent =
     "✦ " + S.selected;
 }
+
 function renderForge() {
   const grid =
     document.querySelector("#forgeGrid");
@@ -353,6 +359,8 @@ function renderForge() {
 }
 
 function transmute() {
+  if (S.dead) return;
+
   if (S.forge.length < 2) {
     notice(
       "Select at least 2 magics"
@@ -551,6 +559,8 @@ document.querySelectorAll(
   button.addEventListener(
     "click",
     () => {
+      if (S.dead) return;
+
       const modal =
         document.querySelector(
           "#" +
@@ -600,7 +610,19 @@ const knob =
 
 let pointerID = null;
 
+function resetJoystick() {
+  pointerID = null;
+
+  joystick.x = 0;
+  joystick.y = 0;
+
+  knob.style.transform =
+    "translate(0px, 0px)";
+}
+
 function moveStick(event) {
+  if (S.dead) return;
+
   const rect =
     stick.getBoundingClientRect();
 
@@ -641,6 +663,8 @@ function moveStick(event) {
 stick.addEventListener(
   "pointerdown",
   event => {
+    if (S.dead) return;
+
     pointerID =
       event.pointerId;
 
@@ -657,7 +681,8 @@ stick.addEventListener(
   event => {
     if (
       event.pointerId ===
-      pointerID
+        pointerID &&
+      !S.dead
     ) {
       moveStick(event);
     }
@@ -666,18 +691,17 @@ stick.addEventListener(
 
 stick.addEventListener(
   "pointerup",
-  () => {
-    pointerID = null;
+  resetJoystick
+);
 
-    joystick.x = 0;
-    joystick.y = 0;
-
-    knob.style.transform =
-      "translate(0px, 0px)";
-  }
+stick.addEventListener(
+  "pointercancel",
+  resetJoystick
 );
 
 function spawnEnemy() {
+  if (S.dead) return;
+
   const angle =
     Math.random() *
     Math.PI *
@@ -708,7 +732,9 @@ function burst(
   x,
   y,
   color,
-  amount
+  amount,
+  life = 25,
+  speedBoost = 1
 ) {
   for (
     let i = 0;
@@ -721,9 +747,11 @@ function burst(
       2;
 
     const speed =
-      Math.random() *
-        3 +
-      1;
+      (
+        Math.random() *
+          3 +
+        1
+      ) * speedBoost;
 
     S.particles.push({
       x,
@@ -737,12 +765,104 @@ function burst(
         Math.sin(angle) *
         speed,
 
-      life: 25,
+      life,
+      maxLife: life,
       color
     });
   }
 }
-  function castSpell() {
+
+/* =========================
+   DEATH + RESPAWN
+   ========================= */
+
+function die() {
+  if (S.dead) return;
+
+  S.hp = 0;
+  S.dead = true;
+
+  S.deathTimer = 0;
+  S.deathScreen = false;
+
+  resetJoystick();
+
+  S.shots = [];
+  S.ward = 0;
+
+  const magic =
+    S.magic[S.selected];
+
+  // Large magical disintegration
+  burst(
+    S.x,
+    S.y,
+    magic.color,
+    85,
+    55,
+    2.2
+  );
+
+  burst(
+    S.x,
+    S.y,
+    "#ffffff",
+    40,
+    45,
+    1.5
+  );
+}
+
+function respawn() {
+  S.hp = 100;
+  S.mana = 100;
+
+  // Return to original spawn
+  S.x = 0;
+  S.y = 0;
+
+  S.dead = false;
+  S.deathTimer = 0;
+  S.deathScreen = false;
+
+  S.enemies = [];
+  S.shots = [];
+  S.ward = 0;
+
+  resetJoystick();
+
+  const magic =
+    S.magic[S.selected];
+
+  // Magical reformation
+  burst(
+    S.x,
+    S.y,
+    magic.color,
+    70,
+    45,
+    1.7
+  );
+
+  burst(
+    S.x,
+    S.y,
+    "#ffffff",
+    25,
+    35,
+    1.1
+  );
+
+  notice(
+    "MAGIC REFORMED"
+  );
+
+  updateHUD();
+}
+
+function castSpell() {
+  if (S.dead) return;
+
   if (S.mana < 10) {
     notice("Not enough mana");
     return;
@@ -811,6 +931,8 @@ function burst(
 }
 
 function activateWard() {
+  if (S.dead) return;
+
   if (S.mana < 15) {
     notice("Not enough mana");
     return;
@@ -828,6 +950,8 @@ function activateWard() {
 }
 
 function dodge() {
+  if (S.dead) return;
+
   let dx = joystick.x;
   let dy = joystick.y;
 
@@ -858,6 +982,8 @@ function dodge() {
 }
 
 function nextMagic() {
+  if (S.dead) return;
+
   const magics =
     Object.keys(S.magic);
 
@@ -919,160 +1045,186 @@ function update(time) {
 
   previousTime = time;
 
-  S.x +=
-    joystick.x *
-    180 *
-    delta;
-
-  S.y +=
-    joystick.y *
-    180 *
-    delta;
-
-  S.mana =
-    Math.min(
-      100,
-      S.mana +
-        8 * delta
-    );
-
-  if (S.ward > 0) {
-    S.ward -= 1;
-  }
-
-  enemyTimer += delta;
-
   if (
-    enemyTimer > 3.2 &&
-    S.enemies.length < 8
+    S.hp <= 0 &&
+    !S.dead
   ) {
-    spawnEnemy();
-    enemyTimer = 0;
+    die();
   }
 
-  for (
-    const enemy of S.enemies
-  ) {
-    const dx =
-      S.x - enemy.x;
-
-    const dy =
-      S.y - enemy.y;
-
-    const distance =
-      Math.hypot(dx, dy) ||
-      1;
-
-    enemy.x +=
-      (dx / distance) *
-      48 *
-      delta;
-
-    enemy.y +=
-      (dy / distance) *
-      48 *
-      delta;
+  if (S.dead) {
+    S.deathTimer += delta;
 
     if (
-      distance < 28 &&
-      S.ward <= 0
+      S.deathTimer >= 1.15
     ) {
-      S.hp =
-        Math.max(
-          0,
-          S.hp -
-            12 * delta
-        );
+      S.deathScreen = true;
     }
   }
 
-  for (
-    const shot of S.shots
-  ) {
-    shot.x += shot.vx;
-    shot.y += shot.vy;
+  if (!S.dead) {
+    S.x +=
+      joystick.x *
+      180 *
+      delta;
 
-    shot.life -= 1;
+    S.y +=
+      joystick.y *
+      180 *
+      delta;
+
+    S.mana =
+      Math.min(
+        100,
+        S.mana +
+          8 * delta
+      );
+
+    if (S.ward > 0) {
+      S.ward -= 1;
+    }
+
+    enemyTimer += delta;
+
+    if (
+      enemyTimer > 3.2 &&
+      S.enemies.length < 8
+    ) {
+      spawnEnemy();
+      enemyTimer = 0;
+    }
 
     for (
-      const enemy of
-      S.enemies
+      const enemy of S.enemies
     ) {
-      const hitDistance =
-        Math.hypot(
-          shot.x - enemy.x,
-          shot.y - enemy.y
-        );
+      const dx =
+        S.x - enemy.x;
+
+      const dy =
+        S.y - enemy.y;
+
+      const distance =
+        Math.hypot(dx, dy) ||
+        1;
+
+      enemy.x +=
+        (dx / distance) *
+        48 *
+        delta;
+
+      enemy.y +=
+        (dy / distance) *
+        48 *
+        delta;
 
       if (
-        hitDistance <
-        enemy.r + 8
+        distance < 28 &&
+        S.ward <= 0
       ) {
-        enemy.hp -=
-          shot.power;
+        S.hp =
+          Math.max(
+            0,
+            S.hp -
+              12 * delta
+          );
+      }
+    }
 
-        shot.life = 0;
+    if (S.hp <= 0) {
+      die();
+    }
 
+    for (
+      const shot of S.shots
+    ) {
+      shot.x += shot.vx;
+      shot.y += shot.vy;
+
+      shot.life -= 1;
+
+      for (
+        const enemy of
+        S.enemies
+      ) {
+        const hitDistance =
+          Math.hypot(
+            shot.x - enemy.x,
+            shot.y - enemy.y
+          );
+
+        if (
+          hitDistance <
+          enemy.r + 8
+        ) {
+          enemy.hp -=
+            shot.power;
+
+          shot.life = 0;
+
+          burst(
+            enemy.x,
+            enemy.y,
+            shot.color,
+            12
+          );
+
+          break;
+        }
+      }
+    }
+
+    const defeated =
+      S.enemies.filter(
+        enemy =>
+          enemy.hp <= 0
+      );
+
+    if (
+      defeated.length > 0
+    ) {
+      S.essence +=
+        defeated.length;
+
+      S.xp +=
+        defeated.length *
+        10;
+
+      S.rank =
+        1 +
+        Math.floor(
+          S.xp / 100
+        );
+
+      for (
+        const enemy of
+        defeated
+      ) {
         burst(
           enemy.x,
           enemy.y,
-          shot.color,
-          12
+          "#ffffff",
+          20
         );
-
-        break;
       }
-    }
-  }
 
-  const defeated =
-    S.enemies.filter(
-      enemy =>
-        enemy.hp <= 0
-    );
-
-  if (
-    defeated.length > 0
-  ) {
-    S.essence +=
-      defeated.length;
-
-    S.xp +=
-      defeated.length *
-      10;
-
-    S.rank =
-      1 +
-      Math.floor(
-        S.xp / 100
-      );
-
-    for (
-      const enemy of
-      defeated
-    ) {
-      burst(
-        enemy.x,
-        enemy.y,
-        "#ffffff",
-        20
-      );
+      saveGame();
     }
 
-    saveGame();
+    S.enemies =
+      S.enemies.filter(
+        enemy =>
+          enemy.hp > 0
+      );
+
+    S.shots =
+      S.shots.filter(
+        shot =>
+          shot.life > 0
+      );
   }
 
-  S.enemies =
-    S.enemies.filter(
-      enemy =>
-        enemy.hp > 0
-    );
-
-  S.shots =
-    S.shots.filter(
-      shot =>
-        shot.life > 0
-    );
+  // Particles continue moving
+  // during the death animation.
 
   for (
     const particle of
@@ -1360,7 +1512,7 @@ function drawWorld() {
       Math.max(
         0,
         particle.life /
-        25
+        (particle.maxLife || 25)
       );
 
     ctx.fillStyle =
@@ -1378,63 +1530,190 @@ function drawWorld() {
 
   // PLAYER
 
-  const playerColor =
-    S.magic[
-      S.selected
-    ].color;
+  if (!S.dead) {
+    const playerColor =
+      S.magic[
+        S.selected
+      ].color;
 
-  ctx.shadowBlur = 30;
+    ctx.shadowBlur = 30;
 
-  ctx.shadowColor =
-    playerColor;
+    ctx.shadowColor =
+      playerColor;
 
-  ctx.fillStyle =
-    "#f5f1ff";
-
-  ctx.beginPath();
-
-  ctx.arc(
-    S.x,
-    S.y,
-    14,
-    0,
-    Math.PI * 2
-  );
-
-  ctx.fill();
-
-  ctx.strokeStyle =
-    playerColor;
-
-  ctx.lineWidth = 3;
-
-  ctx.stroke();
-
-  ctx.shadowBlur = 0;
-
-  // WARD
-
-  if (S.ward > 0) {
-    ctx.strokeStyle =
-      "#b8a8ff";
-
-    ctx.lineWidth = 3;
+    ctx.fillStyle =
+      "#f5f1ff";
 
     ctx.beginPath();
 
     ctx.arc(
       S.x,
       S.y,
-      30,
+      14,
       0,
       Math.PI * 2
     );
 
+    ctx.fill();
+
+    ctx.strokeStyle =
+      playerColor;
+
+    ctx.lineWidth = 3;
+
     ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // WARD
+
+    if (S.ward > 0) {
+      ctx.strokeStyle =
+        "#b8a8ff";
+
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        S.x,
+        S.y,
+        30,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.stroke();
+    }
   }
 
   ctx.restore();
+
+  // DEATH SCREEN
+
+  if (S.deathScreen) {
+    ctx.fillStyle =
+      "rgba(5, 4, 12, 0.84)";
+
+    ctx.fillRect(
+      0,
+      0,
+      vw,
+      vh
+    );
+
+    ctx.textAlign =
+      "center";
+
+    ctx.shadowBlur = 30;
+    ctx.shadowColor =
+      "#9d6cff";
+
+    ctx.fillStyle =
+      "#ffffff";
+
+    ctx.font =
+      "bold 42px sans-serif";
+
+    ctx.fillText(
+      "YOU DIED",
+      vw / 2,
+      vh / 2 - 45
+    );
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle =
+      "#c8c0df";
+
+    ctx.font =
+      "17px sans-serif";
+
+    ctx.fillText(
+      "Your magic awaits rebirth",
+      vw / 2,
+      vh / 2 - 5
+    );
+
+    // RESPAWN BUTTON
+
+    const buttonX =
+      vw / 2 - 90;
+
+    const buttonY =
+      vh / 2 + 35;
+
+    const buttonW = 180;
+    const buttonH = 56;
+
+    ctx.shadowBlur = 20;
+    ctx.shadowColor =
+      "#9d6cff";
+
+    ctx.fillStyle =
+      "#6f48c9";
+
+    ctx.fillRect(
+      buttonX,
+      buttonY,
+      buttonW,
+      buttonH
+    );
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle =
+      "#ffffff";
+
+    ctx.font =
+      "bold 18px sans-serif";
+
+    ctx.fillText(
+      "RESPAWN",
+      vw / 2,
+      buttonY + 36
+    );
+  }
 }
+
+/* =========================
+   RESPAWN BUTTON INPUT
+   ========================= */
+
+C.addEventListener(
+  "pointerdown",
+  event => {
+    if (!S.deathScreen) {
+      return;
+    }
+
+    const rect =
+      C.getBoundingClientRect();
+
+    const x =
+      event.clientX -
+      rect.left;
+
+    const y =
+      event.clientY -
+      rect.top;
+
+    const buttonX =
+      vw / 2 - 90;
+
+    const buttonY =
+      vh / 2 + 35;
+
+    if (
+      x >= buttonX &&
+      x <= buttonX + 180 &&
+      y >= buttonY &&
+      y <= buttonY + 56
+    ) {
+      respawn();
+    }
+  }
+);
 
 // START GAME
 
