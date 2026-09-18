@@ -7,7 +7,7 @@ const SUPABASE_URL =
   "https://pwvsumipvwfejvaknsxl.supabase.co";
 
 const SUPABASE_KEY =
-  "PASTE_YOUR_ANON_KEY_HERE";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3dnN1bWlwdndmZWp2YWtuc3hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDM3MzIsImV4cCI6MjEwNTMxOTczMn0.LwKfBcWu8WoN7aqW8QGbLRTa1wfNzzcSGVIekeZx4pA";
 
 const supabaseClient =
   window.supabase.createClient(
