@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
+
+  <title>Arcane Forge</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+</head>
+
+<body>
+
+  <div id="game">
+    <canvas id="c"></canvas>
+  </div>
+
+  <div id="hud">
+
+    <div class="top">
+
+      <div class="brand">
+        ARCANE FORGE
+      </div>
+
+      <div class="bars">
+
+        <div class="bar">
+          <div
+            id="hp"
+            class="fill hp"
+            style="width:100%"
+          ></div>
+        </div>
+
+        <div class="bar">
+          <div
+            id="mana"
+            class="fill mana"
+            style="width:100%"
+          ></div>
+        </div>
+
+        <div
+          id="stats"
+          class="stats"
+        >
+          Rank 1 • Essence 0
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="spellName">
+    ✦ Fire
+  </div>
+
+  <div id="stick">
+    <div id="knob"></div>
+  </div>
+
+  <div class="controls">
+
+    <button
+      id="cast"
+      class="action"
+    >
+      CAST
+    </button>
+
+    <button
+      id="ward"
+      class="action"
+    >
+      WARD
+    </button>
+
+    <button
+      id="dodge"
+      class="action"
+    >
+      DODGE
+    </button>
+
+    <button
+      id="cycle"
+      class="action"
+    >
+      NEXT
+    </button>
+
+  </div>
+
+  <div class="nav">
+
+    <button data-open="forgeModal">
+      Forge
+    </button>
+
+    <button data-open="treeModal">
+      Tree
+    </button>
+
+    <button data-open="bookModal">
+      Grimoire
+    </button>
+
+  </div>
+
+  <div
+    id="forgeModal"
+    class="modal"
+  >
+
+    <button class="close">
+      Close
+    </button>
+
+    <h2>
+      Arcane Crucible
+    </h2>
+
+    <div class="sub">
+      Select 2–3 magics.
+      Forged magic can be forged again,
+      creating recursive branches.
+    </div>
+
+    <div id="forgeGrid" class="grid"></div>
+
+    <div id="forgeSlots">
+      No magic selected.
+    </div>
+
+    <button
+      id="transmute"
+      class="primary"
+    >
+      TRANSMUTE
+    </button>
+
+  </div>
+
+  <div
+    id="treeModal"
+    class="modal"
+  >
+
+    <button class="close">
+      Close
+    </button>
+
+    <h2>
+      Magic Tree
+    </h2>
+
+    <div class="sub">
+      Every node remembers what created it.
+    </div>
+
+    <div id="treeWrap"></div>
+
+  </div>
+
+  <div
+    id="bookModal"
+    class="modal"
+  >
+
+    <button class="close">
+      Close
+    </button>
+
+    <h2>
+      Grimoire
+    </h2>
+
+    <div class="sub">
+      Your discovered schools and their ancestry.
+    </div>
+
+    <div id="entries"></div>
+
+  </div>
+
+  <div id="notice"></div>
+
+  <script src="script.js"></script>
+
+</body>
+
+</html>
