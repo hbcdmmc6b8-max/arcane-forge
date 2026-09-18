@@ -1,4 +1,144 @@
 (() => {
+/* =========================================================
+   MULTIPLAYER v0.1
+========================================================= */
+
+const SUPABASE_URL =
+  "https://pwvsumipvwfejvaknsxl.supabase.co";
+
+const SUPABASE_KEY =
+  "PASTE_YOUR_ANON_KEY_HERE";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+let multiplayerChannel = null;
+let multiplayerRoom = null;
+
+const multiplayerId =
+  crypto.randomUUID();
+
+function makeRoomCode() {
+  const chars =
+    "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+  let code = "";
+
+  for (let i = 0; i < 6; i++) {
+    code += chars[
+      Math.floor(
+        Math.random() *
+        chars.length
+      )
+    ];
+  }
+
+  return code;
+}
+
+function connectMultiplayer(roomCode) {
+  const code =
+    roomCode.trim().toUpperCase();
+
+  if (!code) return;
+
+  if (multiplayerChannel) {
+    supabaseClient.removeChannel(
+      multiplayerChannel
+    );
+  }
+
+  multiplayerRoom = code;
+
+  multiplayerChannel =
+    supabaseClient.channel(
+      `arcane-forge:${code}`,
+      {
+        config: {
+          broadcast: {
+            self: false
+          }
+        }
+      }
+    );
+
+  multiplayerChannel
+    .on(
+      "broadcast",
+      {
+        event: "player-state"
+      },
+      ({ payload }) => {
+        if (
+          !payload ||
+          payload.id === multiplayerId
+        ) {
+          return;
+        }
+
+        console.log(
+          "OTHER PLAYER:",
+          payload
+        );
+      }
+    )
+    .subscribe(
+      (status, error) => {
+        console.log(
+          "MULTIPLAYER:",
+          status
+        );
+
+        if (error) {
+          console.error(
+            "MULTIPLAYER ERROR:",
+            error
+          );
+        }
+
+        if (
+          status === "SUBSCRIBED"
+        ) {
+          notice(
+            `ROOM ${code} CONNECTED`
+          );
+        }
+      }
+    );
+}
+
+function createMultiplayerRoom() {
+  const code = makeRoomCode();
+
+  connectMultiplayer(code);
+
+  return code;
+}
+
+function sendPlayerState() {
+  if (
+    !multiplayerChannel ||
+    !multiplayerRoom
+  ) {
+    return;
+  }
+
+  multiplayerChannel.send({
+    type: "broadcast",
+    event: "player-state",
+
+    payload: {
+      id: multiplayerId,
+      x: player.x,
+      y: player.y,
+      hp: player.hp,
+      magic: currentMagic
+    }
+  });
+}
 const C = document.querySelector("#c");
 const ctx = C.getContext("2d");
 
