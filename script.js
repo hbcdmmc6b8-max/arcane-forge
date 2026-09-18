@@ -646,6 +646,139 @@ function notice(text) {
     }, 1800);
 }
 
+
+/* =========================
+   DAMAGE INDICATOR
+========================= */
+
+const damageIndicator =
+  document.createElement("div");
+
+damageIndicator.id = "damageIndicator";
+
+Object.assign(
+  damageIndicator.style,
+  {
+    position: "fixed",
+    left: "50%",
+    top: "22%",
+    transform: "translate(-50%, -50%)",
+    padding: "10px 16px",
+    borderRadius: "14px",
+    background: "rgba(20, 5, 10, .82)",
+    border: "1px solid rgba(255, 90, 110, .65)",
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: "18px",
+    textAlign: "center",
+    lineHeight: "1.25",
+    zIndex: "90",
+    pointerEvents: "none",
+    opacity: "0",
+    transition: "opacity .15s, transform .15s",
+    textShadow: "0 0 10px rgba(255,70,90,.75)"
+  }
+);
+
+document.body.appendChild(
+  damageIndicator
+);
+
+let pendingDamage = 0;
+let damageIndicatorTimer = null;
+let damageIndicatorFlush = null;
+
+function showDamageIndicator(
+  damage
+) {
+  if (
+    !Number.isFinite(damage) ||
+    damage <= 0
+  ) {
+    return;
+  }
+
+  pendingDamage += damage;
+
+  clearTimeout(
+    damageIndicatorFlush
+  );
+
+  damageIndicatorFlush =
+    setTimeout(
+      () => {
+        const lost =
+          Math.max(
+            1,
+            Math.round(
+              pendingDamage
+            )
+          );
+
+        pendingDamage = 0;
+
+        damageIndicator.innerHTML =
+          `<span style="color:#ff6577">-${lost} HP</span>` +
+          `<br><span style="font-size:14px">` +
+          `${Math.max(0, Math.ceil(S.hp))} HP LEFT</span>`;
+
+        damageIndicator.style.opacity =
+          "1";
+
+        damageIndicator.style.transform =
+          "translate(-50%, -58%)";
+
+        clearTimeout(
+          damageIndicatorTimer
+        );
+
+        damageIndicatorTimer =
+          setTimeout(
+            () => {
+              damageIndicator.style.opacity =
+                "0";
+
+              damageIndicator.style.transform =
+                "translate(-50%, -50%)";
+            },
+            850
+          );
+      },
+      120
+    );
+}
+
+function damagePlayer(
+  amount
+) {
+  if (
+    S.dead ||
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+    return 0;
+  }
+
+  const before = S.hp;
+
+  S.hp =
+    Math.max(
+      0,
+      S.hp - amount
+    );
+
+  const lost =
+    before - S.hp;
+
+  if (lost > 0) {
+    showDamageIndicator(
+      lost
+    );
+  }
+
+  return lost;
+}
+
 function updateHUD() {
   const hp =
     document.querySelector("#hp");
@@ -3806,11 +3939,9 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
           armorMultiplier *
           delta;
 
-        S.hp =
-          Math.max(
-            0,
-            S.hp - damage
-          );
+        damagePlayer(
+          damage
+        );
 
         addAwakening(
           4 * delta
@@ -3867,13 +3998,10 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
               ? 0.35
               : 1;
 
-          S.hp =
-            Math.max(
-              0,
-              S.hp -
-              shot.damage *
-              armorMultiplier
-            );
+          damagePlayer(
+            shot.damage *
+            armorMultiplier
+          );
 
           addAwakening(4);
         }
