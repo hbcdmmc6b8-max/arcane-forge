@@ -17,6 +17,11 @@ function resize() {
 addEventListener("resize", resize);
 resize();
 
+/* =========================================================
+   ARCANE FORGE v1.4
+   AWAKENING UPDATE
+========================================================= */
+
 /* =========================
    MAGIC
 ========================= */
@@ -33,18 +38,263 @@ const base = {
   Force: ["#ff79dd", ["push","impact","control"]]
 };
 
+/*
+  IMPORTANT:
+  Recipe keys must be alphabetically sorted.
+*/
+
 const recipes = {
-  "Earth+Fire": ["Magma","#ff5528",["heat","stone","burn"]],
-  "Fire+Wind": ["Inferno","#ff3217",["heat","burn","speed"]],
-  "Lightning+Water": ["Storm","#59dcff",["wet","shock","energy"]],
-  "Ice+Water": ["Glacier","#b8f2ff",["freeze","solid","defense"]],
-  "Fire+Light": ["Solar","#ffd24a",["radiant","heat","energy"]],
-  "Fire+Shadow": ["Blackflame","#a83fff",["dark","heat","burn","drain"]],
-  "Force+Wind": ["Gravity","#b28aff",["control","mass","push"]],
-  "Light+Lightning": ["Plasma","#e8f5ff",["energy","shock","radiant"]],
-  "Earth+Water": ["Nature","#5de27a",["growth","stone","flow","heal"]],
-  "Force+Shadow": ["Void","#62418f",["dark","control","drain"]]
+
+  /* FIRE */
+
+  "Earth+Fire":
+    ["Magma","#ff5528",["heat","stone","burn"]],
+
+  "Fire+Wind":
+    ["Inferno","#ff3217",["heat","burn","speed"]],
+
+  "Fire+Light":
+    ["Solar","#ffd24a",["radiant","heat","energy"]],
+
+  "Fire+Shadow":
+    ["Blackflame","#a83fff",["dark","heat","burn","drain"]],
+
+  "Fire+Ice":
+    ["Frostfire","#d774ff",["heat","cold","burn","freeze"]],
+
+  "Fire+Lightning":
+    ["Thunderflame","#ff9d35",["heat","shock","burn","energy"]],
+
+  "Fire+Force":
+    ["Blast","#ff6f72",["heat","impact","push","energy"]],
+
+  "Fire+Water":
+    ["Steam","#d7e9ee",["heat","wet","conceal","push"]],
+
+  /* WATER */
+
+  "Lightning+Water":
+    ["Storm","#59dcff",["wet","shock","energy"]],
+
+  "Ice+Water":
+    ["Glacier","#b8f2ff",["freeze","solid","defense"]],
+
+  "Earth+Water":
+    ["Nature","#5de27a",["growth","stone","flow","heal"]],
+
+  "Light+Water":
+    ["Holy Tide","#bcefff",["heal","purify","radiant","flow"]],
+
+  "Shadow+Water":
+    ["Abyss","#3157a8",["dark","wet","drain","control"]],
+
+  "Force+Water":
+    ["Tsunami","#35c9e8",["wet","flow","push","impact"]],
+
+  "Water+Wind":
+    ["Monsoon","#62d9da",["wet","air","flow","push"]],
+
+  /* WIND */
+
+  "Force+Wind":
+    ["Gravity","#b28aff",["control","mass","push"]],
+
+  "Lightning+Wind":
+    ["Thunderstorm","#d9f35b",["air","shock","speed","energy"]],
+
+  "Ice+Wind":
+    ["Blizzard","#c6f7ff",["cold","freeze","air","control"]],
+
+  "Shadow+Wind":
+    ["Nightstorm","#7156b8",["dark","air","speed","conceal"]],
+
+  "Light+Wind":
+    ["Heavenwind","#efffc8",["radiant","air","speed","purify"]],
+
+  "Earth+Wind":
+    ["Sandstorm","#d5ad72",["stone","air","conceal","control"]],
+
+  /* EARTH */
+
+  "Earth+Lightning":
+    ["Magnetism","#d9ae55",["stone","shock","control","mass"]],
+
+  "Earth+Ice":
+    ["Permafrost","#90c9ce",["stone","cold","solid","defense"]],
+
+  "Earth+Shadow":
+    ["Obsidian","#553c6e",["stone","dark","solid","defense"]],
+
+  "Earth+Light":
+    ["Crystal","#ffe8a3",["stone","radiant","solid","energy"]],
+
+  "Earth+Force":
+    ["Quake","#b57d70",["stone","impact","mass","push"]],
+
+  /* LIGHTNING */
+
+  "Light+Lightning":
+    ["Plasma","#e8f5ff",["energy","shock","radiant"]],
+
+  "Lightning+Shadow":
+    ["Dark Lightning","#8b52ff",["dark","shock","drain","speed"]],
+
+  "Ice+Lightning":
+    ["Cryoshock","#99e8ff",["freeze","shock","cold","energy"]],
+
+  "Force+Lightning":
+    ["Electromagnetism","#ed91ff",["shock","control","push","energy"]],
+
+  /* ICE */
+
+  "Ice+Shadow":
+    ["Black Ice","#6576c7",["cold","dark","freeze","drain"]],
+
+  "Ice+Light":
+    ["Prism","#e8ffff",["cold","radiant","solid","purify"]],
+
+  "Force+Ice":
+    ["Shatter","#c4ddff",["cold","impact","solid","push"]],
+
+  /* LIGHT / SHADOW / FORCE */
+
+  "Light+Shadow":
+    ["Eclipse","#c49aff",["radiant","dark","drain","purify"]],
+
+  "Force+Light":
+    ["Divine Force","#ffe9cf",["radiant","impact","defense","push"]],
+
+  "Force+Shadow":
+    ["Void","#62418f",["dark","control","drain"]],
+
+  /* =====================================================
+     THREE-ELEMENT LEGENDARY RECIPES
+  ===================================================== */
+
+  "Fire+Lightning+Wind":
+    ["Supercell","#fff16a",["shock","burn","air","speed","energy"]],
+
+  "Earth+Fire+Force":
+    ["Meteor","#ff7540",["stone","heat","impact","mass","burn"]],
+
+  "Ice+Water+Wind":
+    ["Absolute Blizzard","#d8fbff",["freeze","cold","air","wet","control"]],
+
+  "Force+Light+Shadow":
+    ["Singularity","#8d72c9",["dark","radiant","control","mass","drain"]],
+
+  "Fire+Force+Light":
+    ["Supernova","#fff083",["heat","radiant","impact","energy","burn"]],
+
+  "Fire+Force+Shadow":
+    ["Hellvoid","#872747",["dark","heat","impact","drain","burn"]],
+
+  "Fire+Ice+Lightning":
+    ["Chaos Flame","#cf8cff",["heat","cold","shock","burn","freeze"]],
+
+  "Earth+Light+Water":
+    ["World Tree","#8cff89",["growth","heal","stone","radiant","flow"]],
+
+  "Earth+Force+Lightning":
+    ["Polarity","#e3bd63",["mass","shock","control","impact"]],
+
+  "Light+Lightning+Wind":
+    ["Skyborn","#f4ffd2",["radiant","shock","air","speed","energy"]],
+
+  "Shadow+Water+Wind":
+    ["Abyssal Storm","#4b5fa8",["dark","wet","air","drain","control"]],
+
+  "Ice+Light+Water":
+    ["Sacred Glacier","#dcffff",["freeze","heal","radiant","solid"]],
+
+  "Earth+Fire+Shadow":
+    ["Dreadforge","#7d403d",["stone","dark","heat","burn","defense"]],
+
+  "Force+Lightning+Shadow":
+    ["Dark Matter","#634eae",["dark","mass","shock","control","energy"]],
+
+  "Fire+Light+Lightning":
+    ["Starfire","#fff36c",["radiant","heat","shock","energy","burn"]],
+
+  "Earth+Ice+Shadow":
+    ["Night Crystal","#63758e",["stone","cold","dark","solid","drain"]],
+
+  "Force+Water+Wind":
+    ["Maelstrom","#47bbcf",["flow","air","control","push","impact"]],
+
+  "Force+Ice+Wind":
+    ["Zero Point","#b7e6ff",["cold","control","air","freeze","mass"]],
+
+  "Light+Shadow+Water":
+    ["Twilight Tide","#b78ee8",["radiant","dark","heal","drain","flow"]],
+
+  "Earth+Light+Shadow":
+    ["Eclipse Crystal","#ae86a8",["stone","radiant","dark","solid","energy"]],
+
+  "Fire+Water+Wind":
+    ["Scalding Tempest","#e8d0bd",["heat","wet","air","push","burn"]],
+
+  "Earth+Lightning+Water":
+    ["Living Current","#74dd9a",["growth","shock","flow","heal","energy"]],
+
+  "Ice+Lightning+Wind":
+    ["Thunderfrost","#b7f4ff",["freeze","shock","air","speed"]],
+
+  "Fire+Ice+Shadow":
+    ["Netherfrost","#81559b",["dark","cold","heat","freeze","drain"]],
+
+  "Force+Light+Lightning":
+    ["Judgement","#fff4c5",["radiant","shock","impact","energy","push"]],
+
+  "Force+Shadow+Wind":
+    ["Event Horizon","#493d79",["dark","air","mass","control","drain"]],
+
+  "Earth+Force+Water":
+    ["Continental","#699c74",["stone","mass","flow","impact","defense"]],
+
+  "Fire+Light+Wind":
+    ["Phoenix","#ffbc5d",["radiant","heat","air","heal","burn"]],
+
+  "Ice+Light+Wind":
+    ["Aurora","#aef7ec",["radiant","cold","air","energy","purify"]],
+
+  "Lightning+Shadow+Water":
+    ["Abyss Current","#5664d5",["dark","shock","wet","drain","energy"]],
+
+  "Earth+Ice+Water":
+    ["Frozen World","#a5d4da",["stone","freeze","wet","solid","defense"]],
+
+  "Fire+Lightning+Shadow":
+    ["Demon Bolt","#bf48aa",["dark","shock","heat","burn","drain"]],
+
+  "Force+Ice+Light":
+    ["Diamond Force","#e5ffff",["solid","radiant","impact","defense","cold"]],
+
+  "Light+Water+Wind":
+    ["Seraph Tide","#dcffe9",["radiant","heal","flow","air","purify"]],
+
+  "Earth+Shadow+Water":
+    ["Swamp","#556d4b",["dark","wet","growth","control","drain"]],
+
+  "Earth+Lightning+Wind":
+    ["Dust Thunder","#c8bd74",["stone","air","shock","speed","control"]],
+
+  "Force+Light+Water":
+    ["Life Pulse","#8fffc4",["heal","radiant","impact","flow","energy"]],
+
+  "Fire+Ice+Water":
+    ["Thermal Rift","#aaadcf",["heat","cold","wet","energy","control"]],
+
+  "Lightning+Light+Shadow":
+    ["Eclipse Bolt","#d0b3ff",["radiant","dark","shock","energy","drain"]],
+
+  "Earth+Light+Wind":
+    ["Celestial Sand","#eadf9c",["stone","radiant","air","speed","purify"]]
 };
+
+/* =========================
+   STATE
+========================= */
 
 const S = {
   hp: 100,
@@ -61,19 +311,27 @@ const S = {
   magic: {},
 
   shots: [],
+  enemyShots: [],
   enemies: [],
   particles: [],
   zones: [],
 
   forge: [],
+
   ward: 0,
+  armor: 0,
 
   dead: false,
   deathTimer: 0,
   deathScreen: false,
 
   powerCooldown: 0,
-  armor: 0
+
+  awakening: 0,
+  awakened: false,
+  awakeningTime: 0,
+
+  kills: 0
 };
 
 Object.entries(base).forEach(([name, data]) => {
@@ -103,11 +361,12 @@ try {
 
 function saveGame() {
   try {
-    localStorage.arcaneForge = JSON.stringify({
-      magic: S.magic,
-      essence: S.essence,
-      xp: S.xp
-    });
+    localStorage.arcaneForge =
+      JSON.stringify({
+        magic: S.magic,
+        essence: S.essence,
+        xp: S.xp
+      });
   } catch (e) {}
 }
 
@@ -136,7 +395,12 @@ const prefixes = [
   "Tempest",
   "Runic",
   "Celestial",
-  "Arcane"
+  "Arcane",
+  "Ancient",
+  "Omega",
+  "Phantom",
+  "Cosmic",
+  "Eternal"
 ];
 
 const suffixes = [
@@ -149,11 +413,18 @@ const suffixes = [
   "Wave",
   "Core",
   "Rift",
-  "Bloom"
+  "Bloom",
+  "Nova",
+  "Crown",
+  "Fang",
+  "Heart",
+  "Torrent"
 ];
 
 function generateMagic(parents) {
-  const key = [...parents].sort().join("+");
+  const key =
+    [...parents].sort().join("+");
+
   const h = hash(key);
 
   const name =
@@ -163,7 +434,10 @@ function generateMagic(parents) {
 
   const traits = [
     ...new Set(
-      parents.flatMap(parent => S.magic[parent].traits)
+      parents.flatMap(
+        parent =>
+          S.magic[parent].traits
+      )
     )
   ].slice(0, 8);
 
@@ -179,7 +453,8 @@ function generateMagic(parents) {
 ========================= */
 
 function notice(text) {
-  const box = document.querySelector("#notice");
+  const box =
+    document.querySelector("#notice");
 
   if (!box) return;
 
@@ -188,19 +463,32 @@ function notice(text) {
 
   clearTimeout(notice.timer);
 
-  notice.timer = setTimeout(() => {
-    box.classList.remove("show");
-  }, 1800);
+  notice.timer =
+    setTimeout(() => {
+      box.classList.remove("show");
+    }, 1800);
 }
 
 function updateHUD() {
-  const hp = document.querySelector("#hp");
-  const mana = document.querySelector("#mana");
-  const stats = document.querySelector("#stats");
-  const spellName = document.querySelector("#spellName");
+  const hp =
+    document.querySelector("#hp");
 
-  if (hp) hp.style.width = S.hp + "%";
-  if (mana) mana.style.width = S.mana + "%";
+  const mana =
+    document.querySelector("#mana");
+
+  const stats =
+    document.querySelector("#stats");
+
+  const spellName =
+    document.querySelector("#spellName");
+
+  if (hp)
+    hp.style.width =
+      Math.max(0, S.hp) + "%";
+
+  if (mana)
+    mana.style.width =
+      Math.max(0, S.mana) + "%";
 
   if (stats) {
     stats.textContent =
@@ -209,8 +497,182 @@ function updateHUD() {
   }
 
   if (spellName) {
-    spellName.textContent = "✦ " + S.selected;
+    spellName.textContent =
+      (S.awakened ? "✦ AWAKENED • " : "✦ ") +
+      S.selected;
   }
+}
+
+/* =========================
+   AWAKENING UI
+========================= */
+
+const awakenBox =
+  document.createElement("div");
+
+awakenBox.id = "awakenBox";
+
+Object.assign(
+  awakenBox.style,
+  {
+    position: "fixed",
+    left: "50%",
+    bottom: "145px",
+    transform: "translateX(-50%)",
+    width: "180px",
+    height: "13px",
+    background: "rgba(8,10,20,.85)",
+    border: "1px solid rgba(255,255,255,.25)",
+    borderRadius: "20px",
+    overflow: "hidden",
+    zIndex: "55",
+    pointerEvents: "none"
+  }
+);
+
+const awakenFill =
+  document.createElement("div");
+
+Object.assign(
+  awakenFill.style,
+  {
+    width: "0%",
+    height: "100%",
+    background:
+      "linear-gradient(90deg,#7c4dff,#ffffff)",
+    transition: "width .15s"
+  }
+);
+
+awakenBox.appendChild(awakenFill);
+document.body.appendChild(awakenBox);
+
+const awakenButton =
+  document.createElement("button");
+
+awakenButton.id = "awaken";
+awakenButton.textContent = "AWAKEN";
+
+Object.assign(
+  awakenButton.style,
+  {
+    position: "fixed",
+    left: "50%",
+    bottom: "165px",
+    transform: "translateX(-50%)",
+    width: "130px",
+    height: "48px",
+    borderRadius: "18px",
+    border: "1px solid #ffffff88",
+    background: "rgba(115,70,220,.94)",
+    color: "#fff",
+    fontWeight: "900",
+    zIndex: "61",
+    display: "none",
+    touchAction: "none"
+  }
+);
+
+document.body.appendChild(
+  awakenButton
+);
+
+function addAwakening(amount) {
+  if (
+    S.dead ||
+    S.awakened
+  ) {
+    return;
+  }
+
+  S.awakening =
+    Math.min(
+      100,
+      S.awakening + amount
+    );
+}
+
+function awakeningName() {
+  const names = {
+    Fire: "HELLFIRE",
+    Water: "OCEAN SOUL",
+    Wind: "SKY SOVEREIGN",
+    Earth: "WORLD TITAN",
+    Lightning: "THUNDER GOD",
+    Ice: "ABSOLUTE ZERO",
+    Light: "DIVINE ASCENSION",
+    Shadow: "NIGHT INCARNATE",
+    Force: "UNBOUND FORCE",
+
+    Magma: "PLANETARY FURNACE",
+    Inferno: "ETERNAL INFERNO",
+    Storm: "TEMPEST KING",
+    Glacier: "FROZEN WORLD",
+    Solar: "STARBORN",
+    Blackflame: "ABYSSAL SUN",
+    Gravity: "GRAVITY SOVEREIGN",
+    Plasma: "PLASMA ASCENSION",
+    Nature: "WORLD BLOOM",
+    Void: "EVENT HORIZON",
+
+    Supernova: "STAR DEATH",
+    Singularity: "FINAL SINGULARITY",
+    Phoenix: "PHOENIX ASCENSION",
+    Event_Horizon: "BLACK HORIZON"
+  };
+
+  return (
+    names[S.selected] ||
+    "ARCANE ASCENSION"
+  );
+}
+
+function awaken() {
+  if (
+    S.dead ||
+    S.awakened ||
+    S.awakening < 100
+  ) {
+    return;
+  }
+
+  S.awakening = 0;
+  S.awakened = true;
+  S.awakeningTime = 10;
+
+  S.mana = 100;
+
+  const magic =
+    S.magic[S.selected];
+
+  burst(
+    S.x,
+    S.y,
+    magic.color,
+    160,
+    65,
+    2.8
+  );
+
+  burst(
+    S.x,
+    S.y,
+    "#ffffff",
+    90,
+    55,
+    2
+  );
+
+  damageArea(
+    240,
+    20,
+    magic.color
+  );
+
+  notice(
+    "AWAKENING — " +
+    awakeningName()
+  );
 }
 
 /* =========================
@@ -218,43 +680,67 @@ function updateHUD() {
 ========================= */
 
 function renderForge() {
-  const grid = document.querySelector("#forgeGrid");
-  const slots = document.querySelector("#forgeSlots");
+  const grid =
+    document.querySelector("#forgeGrid");
+
+  const slots =
+    document.querySelector("#forgeSlots");
 
   if (!grid || !slots) return;
 
   grid.innerHTML = "";
 
-  Object.entries(S.magic).forEach(([name, magic]) => {
-    const button = document.createElement("button");
+  Object.entries(S.magic)
+    .forEach(([name, magic]) => {
+      const button =
+        document.createElement("button");
 
-    button.className =
-      "magic" +
-      (S.forge.includes(name) ? " sel" : "");
+      button.className =
+        "magic" +
+        (
+          S.forge.includes(name)
+            ? " sel"
+            : ""
+        );
 
-    button.innerHTML = `
-      <span
-        class="dot"
-        style="background:${magic.color};color:${magic.color}"
-      ></span>
-      <b>${name}</b><br>
-      <small>${magic.traits.join(" · ")}</small>
-    `;
+      button.innerHTML = `
+        <span
+          class="dot"
+          style="
+            background:${magic.color};
+            color:${magic.color}
+          "
+        ></span>
 
-    button.addEventListener("click", () => {
-      const index = S.forge.indexOf(name);
+        <b>${name}</b><br>
 
-      if (index >= 0) {
-        S.forge.splice(index, 1);
-      } else if (S.forge.length < 3) {
-        S.forge.push(name);
-      }
+        <small>
+          ${magic.traits.join(" · ")}
+        </small>
+      `;
 
-      renderForge();
+      button.addEventListener(
+        "click",
+        () => {
+          const index =
+            S.forge.indexOf(name);
+
+          if (index >= 0) {
+            S.forge.splice(index, 1);
+          }
+
+          else if (
+            S.forge.length < 3
+          ) {
+            S.forge.push(name);
+          }
+
+          renderForge();
+        }
+      );
+
+      grid.appendChild(button);
     });
-
-    grid.appendChild(button);
-  });
 
   slots.textContent =
     S.forge.length
@@ -266,27 +752,42 @@ function transmute() {
   if (S.dead) return;
 
   if (S.forge.length < 2) {
-    notice("Select at least 2 magics");
+    notice(
+      "Select at least 2 magics"
+    );
+
     return;
   }
 
-  const parents = [...S.forge].sort();
-  const key = parents.join("+");
+  const parents =
+    [...S.forge].sort();
+
+  const key =
+    parents.join("+");
 
   const result =
     recipes[key] ||
     generateMagic(parents);
 
-  let name = result[0];
-  const color = result[1];
-  const traits = result[2];
+  let name =
+    result[0];
+
+  const color =
+    result[1];
+
+  const traits =
+    result[2];
 
   if (
     S.magic[name] &&
-    JSON.stringify(S.magic[name].parents) !==
-      JSON.stringify(parents)
+    JSON.stringify(
+      S.magic[name].parents
+    ) !==
+    JSON.stringify(parents)
   ) {
-    name += " " + (hash(key) % 97);
+    name +=
+      " " +
+      (hash(key) % 97);
   }
 
   if (!S.magic[name]) {
@@ -297,14 +798,40 @@ function transmute() {
     };
 
     S.essence++;
-    S.xp += 25;
-    S.rank = 1 + Math.floor(S.xp / 100);
+    S.xp +=
+      parents.length === 3
+        ? 45
+        : 25;
+
+    S.rank =
+      1 +
+      Math.floor(
+        S.xp / 100
+      );
 
     saveGame();
 
-    notice("NEW MAGIC: " + name);
-  } else {
-    notice(name + " already discovered");
+    burst(
+      S.x,
+      S.y,
+      color,
+      parents.length === 3
+        ? 90
+        : 45
+    );
+
+    notice(
+      parents.length === 3
+        ? "LEGENDARY MAGIC: " + name
+        : "NEW MAGIC: " + name
+    );
+  }
+
+  else {
+    notice(
+      name +
+      " already discovered"
+    );
   }
 
   S.selected = name;
@@ -317,7 +844,8 @@ function transmute() {
 }
 
 function renderBook() {
-  const entries = document.querySelector("#entries");
+  const entries =
+    document.querySelector("#entries");
 
   if (!entries) return;
 
@@ -326,9 +854,11 @@ function renderBook() {
   Object.entries(S.magic)
     .sort()
     .forEach(([name, magic]) => {
-      const item = document.createElement("div");
+      const item =
+        document.createElement("div");
 
-      item.className = "entry";
+      item.className =
+        "entry";
 
       const origin =
         magic.parents.length
@@ -338,14 +868,18 @@ function renderBook() {
       item.innerHTML = `
         <span
           class="dot"
-          style="background:${magic.color};color:${magic.color}"
+          style="
+            background:${magic.color};
+            color:${magic.color}
+          "
         ></span>
 
         <b>${name}</b>
 
         <small>
           Origin: ${origin}<br>
-          Traits: ${magic.traits.join(", ")}
+          Traits:
+          ${magic.traits.join(", ")}
         </small>
       `;
 
@@ -354,51 +888,66 @@ function renderBook() {
 }
 
 function renderTree() {
-  const tree = document.querySelector("#treeWrap");
+  const tree =
+    document.querySelector("#treeWrap");
 
   if (!tree) return;
 
   tree.innerHTML = "";
 
-  const magics = Object.entries(S.magic);
+  const magics =
+    Object.entries(S.magic);
 
   const centerX = 380;
   const centerY = 250;
 
-  magics.forEach(([name, magic], index) => {
-    const generated = magic.parents.length > 0;
+  magics.forEach(
+    ([name, magic], index) => {
+      const generated =
+        magic.parents.length > 0;
 
-    const angle =
-      Math.PI * 2 * index / magics.length;
+      const angle =
+        Math.PI *
+        2 *
+        index /
+        magics.length;
 
-    const radius =
-      generated ? 210 : 115;
+      const radius =
+        generated
+          ? 210
+          : 115;
 
-    const x =
-      centerX +
-      Math.cos(angle) * radius;
+      const x =
+        centerX +
+        Math.cos(angle) *
+        radius;
 
-    const y =
-      centerY +
-      Math.sin(angle) * radius;
+      const y =
+        centerY +
+        Math.sin(angle) *
+        radius;
 
-    const node = document.createElement("div");
+      const node =
+        document.createElement("div");
 
-    node.className = "node";
+      node.className =
+        "node";
 
-    node.style.left =
-      x - 45 + "px";
+      node.style.left =
+        x - 45 + "px";
 
-    node.style.top =
-      y - 45 + "px";
+      node.style.top =
+        y - 45 + "px";
 
-    node.style.background =
-      magic.color;
+      node.style.background =
+        magic.color;
 
-    node.textContent = name;
+      node.textContent =
+        name;
 
-    tree.appendChild(node);
-  });
+      tree.appendChild(node);
+    }
+  );
 }
 
 const transmuteButton =
@@ -414,40 +963,47 @@ if (transmuteButton) {
 document
   .querySelectorAll("[data-open]")
   .forEach(button => {
-    button.addEventListener("click", () => {
-      if (S.dead) return;
+    button.addEventListener(
+      "click",
+      () => {
+        if (S.dead) return;
 
-      const modal =
-        document.querySelector(
-          "#" + button.dataset.open
-        );
+        const modal =
+          document.querySelector(
+            "#" +
+            button.dataset.open
+          );
 
-      if (modal) {
-        modal.classList.add("open");
+        if (modal) {
+          modal.classList.add("open");
+        }
+
+        renderForge();
+        renderTree();
+        renderBook();
       }
-
-      renderForge();
-      renderTree();
-      renderBook();
-    });
+    );
   });
 
 document
   .querySelectorAll(".close")
   .forEach(button => {
-    button.addEventListener("click", () => {
-      const modal =
-        button.closest(".modal");
+    button.addEventListener(
+      "click",
+      () => {
+        const modal =
+          button.closest(".modal");
 
-      if (modal) {
-        modal.classList.remove("open");
+        if (modal) {
+          modal.classList.remove("open");
+        }
       }
-    });
+    );
   });
 
 /* =========================
    JOYSTICK
-   TRUE MULTITOUCH
+   KEEP v1.3 MULTITOUCH
 ========================= */
 
 const joystick = {
@@ -464,10 +1020,17 @@ const knob =
 let joystickPointer = null;
 
 if (stick) {
-  stick.style.touchAction = "none";
-  stick.style.userSelect = "none";
-  stick.style.webkitUserSelect = "none";
-  stick.style.webkitTouchCallout = "none";
+  stick.style.touchAction =
+    "none";
+
+  stick.style.userSelect =
+    "none";
+
+  stick.style.webkitUserSelect =
+    "none";
+
+  stick.style.webkitTouchCallout =
+    "none";
 }
 
 function resetJoystick() {
@@ -482,7 +1045,10 @@ function resetJoystick() {
   }
 }
 
-function updateJoystick(clientX, clientY) {
+function updateJoystick(
+  clientX,
+  clientY
+) {
   if (!stick || !knob) return;
 
   const rect =
@@ -490,11 +1056,17 @@ function updateJoystick(clientX, clientY) {
 
   let x =
     clientX -
-    (rect.left + rect.width / 2);
+    (
+      rect.left +
+      rect.width / 2
+    );
 
   let y =
     clientY -
-    (rect.top + rect.height / 2);
+    (
+      rect.top +
+      rect.height / 2
+    );
 
   const limit = 36;
 
@@ -506,8 +1078,11 @@ function updateJoystick(clientX, clientY) {
     y *= limit / distance;
   }
 
-  joystick.x = x / limit;
-  joystick.y = y / limit;
+  joystick.x =
+    x / limit;
+
+  joystick.y =
+    y / limit;
 
   knob.style.transform =
     `translate(${x}px, ${y}px)`;
@@ -605,7 +1180,11 @@ function burst(
       2;
 
     const speed =
-      (Math.random() * 3 + 1) *
+      (
+        Math.random() *
+        3 +
+        1
+      ) *
       speedBoost;
 
     S.particles.push({
@@ -628,8 +1207,178 @@ function burst(
 }
 
 /* =========================
-   ENEMIES
+   ENEMY TYPES
 ========================= */
+
+const enemyTypes = {
+
+  Grunt: {
+    hp: 42,
+    speed: 48,
+    damage: 12,
+    radius: 18,
+    color: "#bd334d",
+    xp: 10,
+    essence: 1
+  },
+
+  Runner: {
+    hp: 24,
+    speed: 92,
+    damage: 8,
+    radius: 13,
+    color: "#ff7957",
+    xp: 12,
+    essence: 1
+  },
+
+  Tank: {
+    hp: 125,
+    speed: 25,
+    damage: 20,
+    radius: 27,
+    color: "#852b3c",
+    xp: 25,
+    essence: 2
+  },
+
+  Mage: {
+    hp: 38,
+    speed: 34,
+    damage: 9,
+    radius: 17,
+    color: "#d54fff",
+    xp: 18,
+    essence: 2,
+    ranged: true
+  },
+
+  Dasher: {
+    hp: 48,
+    speed: 42,
+    damage: 18,
+    radius: 16,
+    color: "#ff3f76",
+    xp: 18,
+    essence: 2,
+    dash: true
+  },
+
+  Warden: {
+    hp: 85,
+    speed: 30,
+    damage: 13,
+    radius: 22,
+    color: "#6374c7",
+    xp: 22,
+    essence: 2,
+    shield: true
+  },
+
+  Leech: {
+    hp: 55,
+    speed: 55,
+    damage: 10,
+    radius: 17,
+    color: "#8d294f",
+    xp: 18,
+    essence: 2,
+    leech: true
+  },
+
+  FireElemental: {
+    hp: 60,
+    speed: 45,
+    damage: 14,
+    radius: 20,
+    color: "#ff6334",
+    xp: 20,
+    essence: 2,
+    element: "Fire"
+  },
+
+  IceElemental: {
+    hp: 65,
+    speed: 36,
+    damage: 12,
+    radius: 20,
+    color: "#83e7ff",
+    xp: 20,
+    essence: 2,
+    element: "Ice"
+  },
+
+  LightningElemental: {
+    hp: 45,
+    speed: 75,
+    damage: 12,
+    radius: 16,
+    color: "#ffe74f",
+    xp: 22,
+    essence: 2,
+    element: "Lightning"
+  },
+
+  ShadowElemental: {
+    hp: 58,
+    speed: 58,
+    damage: 14,
+    radius: 19,
+    color: "#8454df",
+    xp: 22,
+    essence: 2,
+    element: "Shadow"
+  }
+};
+
+function randomEnemyType() {
+  const roll =
+    Math.random();
+
+  if (S.rank < 2) {
+    return roll < 0.7
+      ? "Grunt"
+      : "Runner";
+  }
+
+  if (S.rank < 4) {
+    const pool = [
+      "Grunt",
+      "Runner",
+      "Tank",
+      "Mage",
+      "Dasher"
+    ];
+
+    return pool[
+      Math.floor(
+        Math.random() *
+        pool.length
+      )
+    ];
+  }
+
+  const pool = [
+    "Grunt",
+    "Runner",
+    "Tank",
+    "Mage",
+    "Dasher",
+    "Warden",
+    "Leech",
+    "FireElemental",
+    "IceElemental",
+    "LightningElemental",
+    "ShadowElemental"
+  ];
+
+  return pool[
+    Math.floor(
+      Math.random() *
+      pool.length
+    )
+  ];
+}
 
 function spawnEnemy() {
   if (S.dead) return;
@@ -644,7 +1393,23 @@ function spawnEnemy() {
     Math.random() *
     180;
 
+  const typeName =
+    randomEnemyType();
+
+  const type =
+    enemyTypes[typeName];
+
+  const elite =
+    S.rank >= 3 &&
+    Math.random() < 0.08;
+
+  const hp =
+    type.hp *
+    (elite ? 1.8 : 1);
+
   S.enemies.push({
+    type: typeName,
+
     x:
       S.x +
       Math.cos(angle) *
@@ -655,15 +1420,135 @@ function spawnEnemy() {
       Math.sin(angle) *
       distance,
 
-    hp: 40,
-    maxHp: 40,
+    hp,
+    maxHp: hp,
 
-    r: 18,
+    r:
+      type.radius *
+      (elite ? 1.2 : 1),
+
+    speed:
+      type.speed *
+      (elite ? 1.12 : 1),
+
+    damage:
+      type.damage *
+      (elite ? 1.4 : 1),
+
+    color:
+      elite
+        ? "#ffd66f"
+        : type.color,
+
+    xp:
+      Math.round(
+        type.xp *
+        (elite ? 2 : 1)
+      ),
+
+    essence:
+      type.essence *
+      (elite ? 2 : 1),
+
+    ranged:
+      !!type.ranged,
+
+    dash:
+      !!type.dash,
+
+    shieldType:
+      !!type.shield,
+
+    leech:
+      !!type.leech,
+
+    element:
+      type.element || null,
+
+    elite,
 
     burn: 0,
     slow: 0,
-    wet: 0
+    wet: 0,
+
+    shield: 0,
+
+    attackTimer:
+      Math.random() * 2,
+
+    dashTimer:
+      2 + Math.random() * 2
   });
+}
+
+/* =========================
+   MINI BOSS
+========================= */
+
+function spawnMiniBoss() {
+  if (
+    S.dead ||
+    S.enemies.some(
+      enemy => enemy.boss
+    )
+  ) {
+    return;
+  }
+
+  const angle =
+    Math.random() *
+    Math.PI *
+    2;
+
+  const distance = 520;
+
+  S.enemies.push({
+    type: "ARCANE SENTINEL",
+
+    boss: true,
+
+    x:
+      S.x +
+      Math.cos(angle) *
+      distance,
+
+    y:
+      S.y +
+      Math.sin(angle) *
+      distance,
+
+    hp: 420,
+    maxHp: 420,
+
+    r: 38,
+
+    speed: 32,
+    damage: 24,
+
+    color: "#e09cff",
+
+    xp: 120,
+    essence: 8,
+
+    ranged: true,
+    dash: true,
+    shieldType: true,
+
+    elite: false,
+
+    burn: 0,
+    slow: 0,
+    wet: 0,
+
+    shield: 80,
+
+    attackTimer: 1,
+    dashTimer: 4
+  });
+
+  notice(
+    "MINI-BOSS — ARCANE SENTINEL"
+  );
 }
 
 /* =========================
@@ -701,6 +1586,42 @@ function heal(amount) {
 }
 
 /* =========================
+   DAMAGE ENEMY
+========================= */
+
+function hurtEnemy(
+  enemy,
+  damage,
+  color
+) {
+  if (
+    enemy.shield > 0
+  ) {
+    const absorbed =
+      Math.min(
+        enemy.shield,
+        damage
+      );
+
+    enemy.shield -= absorbed;
+    damage -= absorbed;
+  }
+
+  if (damage > 0) {
+    enemy.hp -= damage;
+  }
+
+  if (color) {
+    burst(
+      enemy.x,
+      enemy.y,
+      color,
+      10
+    );
+  }
+}
+
+/* =========================
    POWER HELPERS
 ========================= */
 
@@ -721,13 +1642,11 @@ function damageArea(
     if (
       distance <= radius
     ) {
-      enemy.hp -= damage;
-
-      burst(
-        enemy.x,
-        enemy.y,
-        color,
-        12
+      hurtEnemy(
+        enemy,
+        damage *
+        (S.awakened ? 1.65 : 1),
+        color
       );
     }
   }
@@ -755,11 +1674,21 @@ function pushEnemies(
       dx /= distance;
       dy /= distance;
 
+      const resistance =
+        enemy.type === "Tank" ||
+        enemy.boss
+          ? 0.35
+          : 1;
+
       enemy.x +=
-        dx * strength;
+        dx *
+        strength *
+        resistance;
 
       enemy.y +=
-        dy * strength;
+        dy *
+        strength *
+        resistance;
     }
   }
 }
@@ -786,11 +1715,20 @@ function pullEnemies(
       dx /= distance;
       dy /= distance;
 
+      const resistance =
+        enemy.boss
+          ? 0.35
+          : 1;
+
       enemy.x +=
-        dx * strength;
+        dx *
+        strength *
+        resistance;
 
       enemy.y +=
-        dy * strength;
+        dy *
+        strength *
+        resistance;
     }
   }
 }
@@ -817,7 +1755,7 @@ function createZone(
 }
 
 /* =========================
-   GENERATED MAGIC POWER
+   GENERATED POWER
 ========================= */
 
 function generatedPower(magic) {
@@ -831,7 +1769,12 @@ function generatedPower(magic) {
     traits.includes("growth") ||
     traits.includes("purify")
   ) {
-    heal(25);
+    heal(
+      S.awakened
+        ? 40
+        : 25
+    );
+
     didSomething = true;
   }
 
@@ -840,8 +1783,8 @@ function generatedPower(magic) {
     traits.includes("heat")
   ) {
     damageArea(
-      170,
-      12,
+      180,
+      13,
       magic.color
     );
 
@@ -852,9 +1795,12 @@ function generatedPower(magic) {
         Math.hypot(
           enemy.x - S.x,
           enemy.y - S.y
-        ) < 170
+        ) < 180
       ) {
-        enemy.burn = 5;
+        enemy.burn =
+          S.awakened
+            ? 9
+            : 5;
       }
     }
 
@@ -866,8 +1812,10 @@ function generatedPower(magic) {
     traits.includes("impact")
   ) {
     pushEnemies(
-      180,
-      100
+      200,
+      S.awakened
+        ? 180
+        : 100
     );
 
     didSomething = true;
@@ -878,8 +1826,10 @@ function generatedPower(magic) {
     traits.includes("mass")
   ) {
     pullEnemies(
-      220,
-      70
+      240,
+      S.awakened
+        ? 120
+        : 70
     );
 
     didSomething = true;
@@ -896,9 +1846,12 @@ function generatedPower(magic) {
         Math.hypot(
           enemy.x - S.x,
           enemy.y - S.y
-        ) < 190
+        ) < 210
       ) {
-        enemy.slow = 5;
+        enemy.slow =
+          S.awakened
+            ? 9
+            : 5;
       }
     }
 
@@ -910,8 +1863,8 @@ function generatedPower(magic) {
     traits.includes("energy")
   ) {
     damageArea(
-      190,
-      10,
+      200,
+      12,
       magic.color
     );
 
@@ -923,12 +1876,16 @@ function generatedPower(magic) {
     traits.includes("dark")
   ) {
     damageArea(
-      150,
-      8,
+      165,
+      10,
       magic.color
     );
 
-    heal(10);
+    heal(
+      S.awakened
+        ? 18
+        : 10
+    );
 
     didSomething = true;
   }
@@ -940,7 +1897,9 @@ function generatedPower(magic) {
     S.ward =
       Math.max(
         S.ward,
-        120
+        S.awakened
+          ? 240
+          : 120
       );
 
     didSomething = true;
@@ -948,8 +1907,8 @@ function generatedPower(magic) {
 
   if (!didSomething) {
     damageArea(
-      160,
-      15,
+      170,
+      16,
       magic.color
     );
   }
@@ -963,7 +1922,11 @@ function generatedPower(magic) {
     1.8
   );
 
-  notice("ARCANE POWER");
+  notice(
+    S.awakened
+      ? "AWAKENED ARCANE POWER"
+      : "ARCANE POWER"
+  );
 }
 
 /* =========================
@@ -987,8 +1950,18 @@ function usePower() {
     return;
   }
 
-  if (S.mana < 25) {
-    notice("Not enough mana");
+  const manaCost =
+    S.awakened
+      ? 10
+      : 25;
+
+  if (
+    S.mana < manaCost
+  ) {
+    notice(
+      "Not enough mana"
+    );
+
     return;
   }
 
@@ -998,13 +1971,19 @@ function usePower() {
   const magic =
     S.magic[name];
 
-  S.mana -= 25;
-  S.powerCooldown = 7;
+  S.mana -= manaCost;
+
+  S.powerCooldown =
+    S.awakened
+      ? 2.5
+      : 7;
+
+  addAwakening(8);
 
   if (name === "Fire") {
     damageArea(
-      150,
-      10,
+      S.awakened ? 230 : 150,
+      S.awakened ? 24 : 10,
       magic.color
     );
 
@@ -1015,9 +1994,17 @@ function usePower() {
         Math.hypot(
           enemy.x - S.x,
           enemy.y - S.y
-        ) < 150
+        ) <
+        (
+          S.awakened
+            ? 230
+            : 150
+        )
       ) {
-        enemy.burn = 5;
+        enemy.burn =
+          S.awakened
+            ? 10
+            : 5;
       }
     }
 
@@ -1025,183 +2012,45 @@ function usePower() {
       S.x,
       S.y,
       magic.color,
-      50,
-      35,
-      1.5
-    );
-
-    notice("FLAME BURST");
-  }
-
-  else if (name === "Water") {
-    const gained = heal(30);
-
-    notice(
-      gained > 0
-        ? `RESTORING TIDE +${gained}`
-        : "RESTORING TIDE"
-    );
-  }
-
-  else if (name === "Wind") {
-    pushEnemies(
-      190,
-      130
-    );
-
-    burst(
-      S.x,
-      S.y,
-      magic.color,
-      45,
-      30,
+      S.awakened ? 100 : 50,
+      40,
       2
     );
 
-    notice("GALE FORCE");
-  }
-
-  else if (name === "Earth") {
-    S.armor = 8;
-
-    S.ward =
-      Math.max(
-        S.ward,
-        240
-      );
-
-    burst(
-      S.x,
-      S.y,
-      magic.color,
-      40,
-      40,
-      1
+    notice(
+      S.awakened
+        ? "HELLFIRE BURST"
+        : "FLAME BURST"
     );
-
-    notice("STONE ARMOR");
   }
 
   else if (
-    name === "Lightning"
+    name === "Water"
   ) {
-    const targets =
-      [...S.enemies]
-        .sort((a, b) => {
-          const da =
-            Math.hypot(
-              a.x - S.x,
-              a.y - S.y
-            );
-
-          const db =
-            Math.hypot(
-              b.x - S.x,
-              b.y - S.y
-            );
-
-          return da - db;
-        })
-        .slice(0, 4);
-
-    targets.forEach(enemy => {
-      enemy.hp -= 18;
-
-      burst(
-        enemy.x,
-        enemy.y,
-        magic.color,
-        20
-      );
-    });
-
-    notice("CHAIN LIGHTNING");
-  }
-
-  else if (name === "Ice") {
-    for (
-      const enemy of S.enemies
-    ) {
-      if (
-        Math.hypot(
-          enemy.x - S.x,
-          enemy.y - S.y
-        ) < 180
-      ) {
-        enemy.slow = 5;
-      }
-    }
-
-    damageArea(
-      180,
-      8,
-      magic.color
-    );
-
-    notice("FROST NOVA");
-  }
-
-  else if (name === "Light") {
     const gained =
-      heal(45);
-
-    S.ward =
-      Math.max(
-        S.ward,
-        120
+      heal(
+        S.awakened
+          ? 55
+          : 30
       );
 
     notice(
-      gained > 0
-        ? `RADIANT RESTORATION +${gained}`
-        : "RADIANT RESTORATION"
+      `RESTORING TIDE +${gained}`
     );
   }
 
-  else if (name === "Shadow") {
-    let drained = 0;
-
-    for (
-      const enemy of S.enemies
-    ) {
-      if (
-        Math.hypot(
-          enemy.x - S.x,
-          enemy.y - S.y
-        ) < 160
-      ) {
-        enemy.hp -= 12;
-        drained += 4;
-
-        burst(
-          enemy.x,
-          enemy.y,
-          magic.color,
-          12
-        );
-      }
-    }
-
-    heal(
-      Math.min(
-        drained,
-        25
-      )
-    );
-
-    notice("SHADOW DRAIN");
-  }
-
-  else if (name === "Force") {
-    damageArea(
-      170,
-      8,
-      magic.color
-    );
-
+  else if (
+    name === "Wind"
+  ) {
     pushEnemies(
-      170,
-      180
+      S.awakened ? 280 : 190,
+      S.awakened ? 240 : 130
+    );
+
+    damageArea(
+      180,
+      S.awakened ? 18 : 5,
+      magic.color
     );
 
     burst(
@@ -1213,24 +2062,246 @@ function usePower() {
       2
     );
 
-    notice("FORCE REPULSE");
+    notice(
+      S.awakened
+        ? "SOVEREIGN GALE"
+        : "GALE FORCE"
+    );
   }
 
-  else if (name === "Magma") {
+  else if (
+    name === "Earth"
+  ) {
+    S.armor =
+      S.awakened
+        ? 14
+        : 8;
+
+    S.ward =
+      Math.max(
+        S.ward,
+        S.awakened
+          ? 420
+          : 240
+      );
+
+    damageArea(
+      130,
+      S.awakened
+        ? 20
+        : 6,
+      magic.color
+    );
+
+    notice(
+      S.awakened
+        ? "TITAN ARMOR"
+        : "STONE ARMOR"
+    );
+  }
+
+  else if (
+    name === "Lightning"
+  ) {
+    const targets =
+      [...S.enemies]
+        .sort(
+          (a,b) =>
+            Math.hypot(
+              a.x - S.x,
+              a.y - S.y
+            ) -
+            Math.hypot(
+              b.x - S.x,
+              b.y - S.y
+            )
+        )
+        .slice(
+          0,
+          S.awakened ? 8 : 4
+        );
+
+    targets.forEach(
+      enemy => {
+        hurtEnemy(
+          enemy,
+          S.awakened
+            ? 32
+            : 18,
+          magic.color
+        );
+      }
+    );
+
+    notice(
+      S.awakened
+        ? "THUNDER GOD CHAIN"
+        : "CHAIN LIGHTNING"
+    );
+  }
+
+  else if (
+    name === "Ice"
+  ) {
+    const radius =
+      S.awakened
+        ? 280
+        : 180;
+
+    for (
+      const enemy of S.enemies
+    ) {
+      if (
+        Math.hypot(
+          enemy.x - S.x,
+          enemy.y - S.y
+        ) < radius
+      ) {
+        enemy.slow =
+          S.awakened
+            ? 12
+            : 5;
+      }
+    }
+
+    damageArea(
+      radius,
+      S.awakened
+        ? 22
+        : 8,
+      magic.color
+    );
+
+    notice(
+      S.awakened
+        ? "ABSOLUTE ZERO"
+        : "FROST NOVA"
+    );
+  }
+
+  else if (
+    name === "Light"
+  ) {
+    const gained =
+      heal(
+        S.awakened
+          ? 70
+          : 45
+      );
+
+    S.ward =
+      Math.max(
+        S.ward,
+        S.awakened
+          ? 300
+          : 120
+      );
+
+    damageArea(
+      180,
+      S.awakened
+        ? 20
+        : 5,
+      magic.color
+    );
+
+    notice(
+      `RADIANT RESTORATION +${gained}`
+    );
+  }
+
+  else if (
+    name === "Shadow"
+  ) {
+    let drained = 0;
+
+    for (
+      const enemy of S.enemies
+    ) {
+      if (
+        Math.hypot(
+          enemy.x - S.x,
+          enemy.y - S.y
+        ) <
+        (
+          S.awakened
+            ? 230
+            : 160
+        )
+      ) {
+        hurtEnemy(
+          enemy,
+          S.awakened
+            ? 25
+            : 12,
+          magic.color
+        );
+
+        drained +=
+          S.awakened
+            ? 8
+            : 4;
+      }
+    }
+
+    heal(
+      Math.min(
+        drained,
+        S.awakened
+          ? 50
+          : 25
+      )
+    );
+
+    notice(
+      S.awakened
+        ? "NIGHT DEVOURER"
+        : "SHADOW DRAIN"
+    );
+  }
+
+  else if (
+    name === "Force"
+  ) {
+    damageArea(
+      S.awakened ? 240 : 170,
+      S.awakened ? 22 : 8,
+      magic.color
+    );
+
+    pushEnemies(
+      S.awakened ? 240 : 170,
+      S.awakened ? 300 : 180
+    );
+
+    notice(
+      S.awakened
+        ? "UNBOUND REPULSE"
+        : "FORCE REPULSE"
+    );
+  }
+
+  else if (
+    name === "Magma"
+  ) {
     createZone(
       "damage",
       magic.color,
-      105,
-      8
+      S.awakened ? 170 : 105,
+      S.awakened ? 12 : 8
     );
 
-    notice("MOLTEN DOMAIN");
+    notice(
+      "MOLTEN DOMAIN"
+    );
   }
 
-  else if (name === "Inferno") {
+  else if (
+    name === "Inferno"
+  ) {
     damageArea(
-      200,
-      18,
+      S.awakened ? 280 : 200,
+      S.awakened ? 32 : 18,
       magic.color
     );
 
@@ -1241,96 +2312,122 @@ function usePower() {
         Math.hypot(
           enemy.x - S.x,
           enemy.y - S.y
-        ) < 200
+        ) <
+        (
+          S.awakened
+            ? 280
+            : 200
+        )
       ) {
-        enemy.burn = 7;
+        enemy.burn =
+          S.awakened
+            ? 12
+            : 7;
       }
     }
 
     pullEnemies(
-      200,
-      45
+      250,
+      S.awakened ? 100 : 45
+    );
+
+    notice(
+      "INFERNO VORTEX"
+    );
+  }
+
+  else if (
+    name === "Storm"
+  ) {
+    for (
+      const enemy of S.enemies
+    ) {
+      if (
+        Math.hypot(
+          enemy.x - S.x,
+          enemy.y - S.y
+        ) <
+        (
+          S.awakened
+            ? 320
+            : 240
+        )
+      ) {
+        enemy.wet = 8;
+
+        hurtEnemy(
+          enemy,
+          S.awakened
+            ? 30
+            : 16,
+          magic.color
+        );
+      }
+    }
+
+    notice(
+      "TEMPEST CHAIN"
+    );
+  }
+
+  else if (
+    name === "Glacier"
+  ) {
+    damageArea(
+      S.awakened ? 300 : 220,
+      S.awakened ? 26 : 12,
+      magic.color
+    );
+
+    for (
+      const enemy of S.enemies
+    ) {
+      if (
+        Math.hypot(
+          enemy.x - S.x,
+          enemy.y - S.y
+        ) <
+        (
+          S.awakened
+            ? 300
+            : 220
+        )
+      ) {
+        enemy.slow =
+          S.awakened
+            ? 14
+            : 8;
+      }
+    }
+
+    notice(
+      "GLACIAL PRISON"
+    );
+  }
+
+  else if (
+    name === "Solar"
+  ) {
+    damageArea(
+      S.awakened ? 330 : 240,
+      S.awakened ? 50 : 30,
+      magic.color
     );
 
     burst(
       S.x,
       S.y,
       magic.color,
-      80,
+      S.awakened ? 160 : 100,
       45,
-      2
-    );
-
-    notice("INFERNO VORTEX");
-  }
-
-  else if (name === "Storm") {
-    for (
-      const enemy of S.enemies
-    ) {
-      if (
-        Math.hypot(
-          enemy.x - S.x,
-          enemy.y - S.y
-        ) < 240
-      ) {
-        enemy.wet = 6;
-        enemy.hp -= 16;
-      }
-    }
-
-    burst(
-      S.x,
-      S.y,
-      magic.color,
-      70,
-      35,
-      2
-    );
-
-    notice("TEMPEST CHAIN");
-  }
-
-  else if (name === "Glacier") {
-    damageArea(
-      220,
-      12,
-      magic.color
-    );
-
-    for (
-      const enemy of S.enemies
-    ) {
-      if (
-        Math.hypot(
-          enemy.x - S.x,
-          enemy.y - S.y
-        ) < 220
-      ) {
-        enemy.slow = 8;
-      }
-    }
-
-    notice("GLACIAL PRISON");
-  }
-
-  else if (name === "Solar") {
-    damageArea(
-      240,
-      30,
-      magic.color
-    );
-
-    burst(
-      S.x,
-      S.y,
-      magic.color,
-      100,
-      40,
       2.5
     );
 
-    notice("SOLAR ERUPTION");
+    notice(
+      S.awakened
+        ? "STARBORN ERUPTION"
+        : "SOLAR ERUPTION"
+    );
   }
 
   else if (
@@ -1345,10 +2442,26 @@ function usePower() {
         Math.hypot(
           enemy.x - S.x,
           enemy.y - S.y
-        ) < 190
+        ) <
+        (
+          S.awakened
+            ? 260
+            : 190
+        )
       ) {
-        enemy.hp -= 14;
-        enemy.burn = 8;
+        hurtEnemy(
+          enemy,
+          S.awakened
+            ? 30
+            : 14,
+          magic.color
+        );
+
+        enemy.burn =
+          S.awakened
+            ? 14
+            : 8;
+
         drained += 5;
       }
     }
@@ -1356,69 +2469,83 @@ function usePower() {
     heal(
       Math.min(
         drained,
-        30
+        S.awakened
+          ? 50
+          : 30
       )
     );
 
-    notice("ABYSSAL FLAME");
+    notice(
+      "ABYSSAL FLAME"
+    );
   }
 
-  else if (name === "Gravity") {
+  else if (
+    name === "Gravity"
+  ) {
     pullEnemies(
-      280,
-      150
+      S.awakened ? 380 : 280,
+      S.awakened ? 220 : 150
     );
 
     createZone(
       "gravity",
       magic.color,
-      140,
-      6
+      S.awakened ? 210 : 140,
+      S.awakened ? 10 : 6
     );
 
-    notice("GRAVITY WELL");
+    notice(
+      "GRAVITY WELL"
+    );
   }
 
-  else if (name === "Plasma") {
+  else if (
+    name === "Plasma"
+  ) {
     const targets =
       [...S.enemies]
-        .sort((a, b) => {
-          const da =
+        .sort(
+          (a,b) =>
             Math.hypot(
               a.x - S.x,
               a.y - S.y
-            );
-
-          const db =
+            ) -
             Math.hypot(
               b.x - S.x,
               b.y - S.y
-            );
+            )
+        )
+        .slice(
+          0,
+          S.awakened ? 9 : 5
+        );
 
-          return da - db;
-        })
-        .slice(0, 5);
+    targets.forEach(
+      enemy => {
+        hurtEnemy(
+          enemy,
+          S.awakened
+            ? 45
+            : 26,
+          magic.color
+        );
+      }
+    );
 
-    targets.forEach(enemy => {
-      enemy.hp -= 26;
-
-      burst(
-        enemy.x,
-        enemy.y,
-        magic.color,
-        20
-      );
-    });
-
-    notice("PLASMA LANCE");
+    notice(
+      "PLASMA LANCE"
+    );
   }
 
-  else if (name === "Nature") {
+  else if (
+    name === "Nature"
+  ) {
     createZone(
       "heal",
       magic.color,
-      120,
-      10
+      S.awakened ? 180 : 120,
+      S.awakened ? 15 : 10
     );
 
     for (
@@ -1428,39 +2555,143 @@ function usePower() {
         Math.hypot(
           enemy.x - S.x,
           enemy.y - S.y
-        ) < 190
+        ) < 220
       ) {
-        enemy.slow = 6;
+        enemy.slow = 7;
       }
     }
 
-    notice("LIVING SANCTUARY");
+    notice(
+      "LIVING SANCTUARY"
+    );
   }
 
-  else if (name === "Void") {
+  else if (
+    name === "Void"
+  ) {
     pullEnemies(
-      260,
-      120
+      S.awakened ? 380 : 260,
+      S.awakened ? 220 : 120
     );
 
     createZone(
       "void",
       magic.color,
-      130,
-      7
+      S.awakened ? 200 : 130,
+      S.awakened ? 11 : 7
     );
 
-    notice("VOID COLLAPSE");
+    notice(
+      S.awakened
+        ? "EVENT HORIZON"
+        : "VOID COLLAPSE"
+    );
   }
 
   else {
-    generatedPower(magic);
+    generatedPower(
+      magic
+    );
   }
 }
 
 /* =========================
-   DEATH
+   DEATH + REAL RESPAWN UI
 ========================= */
+
+const deathOverlay =
+  document.createElement("div");
+
+deathOverlay.id =
+  "deathOverlay";
+
+Object.assign(
+  deathOverlay.style,
+  {
+    position: "fixed",
+    inset: "0",
+    zIndex: "500",
+    background: "rgba(5,4,12,.86)",
+    display: "none",
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column",
+    textAlign: "center",
+    color: "white",
+    touchAction: "none"
+  }
+);
+
+const deathTitle =
+  document.createElement("div");
+
+deathTitle.textContent =
+  "YOU DIED";
+
+Object.assign(
+  deathTitle.style,
+  {
+    fontSize: "42px",
+    fontWeight: "900",
+    textShadow:
+      "0 0 30px #9d6cff"
+  }
+);
+
+const deathSubtitle =
+  document.createElement("div");
+
+deathSubtitle.textContent =
+  "Your magic awaits rebirth";
+
+Object.assign(
+  deathSubtitle.style,
+  {
+    marginTop: "10px",
+    color: "#c8c0df",
+    fontSize: "17px"
+  }
+);
+
+const respawnButton =
+  document.createElement("button");
+
+respawnButton.textContent =
+  "RESPAWN";
+
+Object.assign(
+  respawnButton.style,
+  {
+    marginTop: "38px",
+    width: "180px",
+    height: "56px",
+    border: "1px solid #bda9ff",
+    borderRadius: "16px",
+    background: "#6f48c9",
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: "18px",
+    boxShadow:
+      "0 0 25px #9d6cff88",
+    touchAction: "none"
+  }
+);
+
+deathOverlay.appendChild(
+  deathTitle
+);
+
+deathOverlay.appendChild(
+  deathSubtitle
+);
+
+deathOverlay.appendChild(
+  respawnButton
+);
+
+document.body.appendChild(
+  deathOverlay
+);
 
 function die() {
   if (S.dead) return;
@@ -1474,6 +2705,8 @@ function die() {
   resetJoystick();
 
   S.shots = [];
+  S.enemyShots = [];
+
   S.ward = 0;
 
   const magic =
@@ -1506,16 +2739,26 @@ function respawn() {
   S.y = 0;
 
   S.dead = false;
+
   S.deathTimer = 0;
   S.deathScreen = false;
 
   S.enemies = [];
+  S.enemyShots = [];
   S.shots = [];
   S.zones = [];
 
   S.ward = 0;
   S.armor = 0;
+
   S.powerCooldown = 0;
+
+  S.awakening = 0;
+  S.awakened = false;
+  S.awakeningTime = 0;
+
+  deathOverlay.style.display =
+    "none";
 
   resetJoystick();
 
@@ -1526,22 +2769,39 @@ function respawn() {
     S.x,
     S.y,
     magic.color,
-    70,
-    45,
-    1.7
+    90,
+    50,
+    2
   );
 
   burst(
     S.x,
     S.y,
     "#ffffff",
-    25,
     35,
-    1.1
+    40,
+    1.3
   );
 
-  notice("MAGIC REFORMED");
+  notice(
+    "MAGIC REFORMED"
+  );
 }
+
+respawnButton.addEventListener(
+  "pointerdown",
+  event => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (
+      S.deathScreen
+    ) {
+      respawn();
+    }
+  },
+  { passive: false }
+);
 
 /* =========================
    NORMAL COMBAT
@@ -1550,12 +2810,24 @@ function respawn() {
 function castSpell() {
   if (S.dead) return;
 
-  if (S.mana < 10) {
-    notice("Not enough mana");
+  const cost =
+    S.awakened
+      ? 5
+      : 10;
+
+  if (
+    S.mana < cost
+  ) {
+    notice(
+      "Not enough mana"
+    );
+
     return;
   }
 
-  S.mana -= 10;
+  S.mana -= cost;
+
+  addAwakening(3);
 
   let target = null;
   let closest = Infinity;
@@ -1581,8 +2853,11 @@ function castSpell() {
   let dy = joystick.y;
 
   if (target) {
-    dx = target.x - S.x;
-    dy = target.y - S.y;
+    dx =
+      target.x - S.x;
+
+    dy =
+      target.y - S.y;
   }
 
   if (
@@ -1603,24 +2878,69 @@ function castSpell() {
   const magic =
     S.magic[S.selected];
 
-  S.shots.push({
-    x: S.x,
-    y: S.y,
+  const count =
+    S.awakened
+      ? 3
+      : 1;
 
-    vx: dx * 9,
-    vy: dy * 9,
+  for (
+    let i = 0;
+    i < count;
+    i++
+  ) {
+    const spread =
+      count === 1
+        ? 0
+        : (i - 1) * 0.16;
 
-    life: 65,
-    power: 14,
+    const cos =
+      Math.cos(spread);
 
-    color: magic.color
-  });
+    const sin =
+      Math.sin(spread);
+
+    const sx =
+      dx * cos -
+      dy * sin;
+
+    const sy =
+      dx * sin +
+      dy * cos;
+
+    S.shots.push({
+      x: S.x,
+      y: S.y,
+
+      vx:
+        sx *
+        (S.awakened ? 11 : 9),
+
+      vy:
+        sy *
+        (S.awakened ? 11 : 9),
+
+      life:
+        S.awakened
+          ? 80
+          : 65,
+
+      power:
+        S.awakened
+          ? 22
+          : 14,
+
+      color:
+        magic.color
+    });
+  }
 
   burst(
     S.x,
     S.y,
     magic.color,
-    8
+    S.awakened
+      ? 18
+      : 8
   );
 }
 
@@ -1628,12 +2948,21 @@ function activateWard() {
   if (S.dead) return;
 
   if (S.mana < 15) {
-    notice("Not enough mana");
+    notice(
+      "Not enough mana"
+    );
+
     return;
   }
 
   S.mana -= 15;
-  S.ward = 120;
+
+  S.ward =
+    S.awakened
+      ? 220
+      : 120;
+
+  addAwakening(2);
 
   burst(
     S.x,
@@ -1646,8 +2975,11 @@ function activateWard() {
 function dodge() {
   if (S.dead) return;
 
-  let dx = joystick.x;
-  let dy = joystick.y;
+  let dx =
+    joystick.x;
+
+  let dy =
+    joystick.y;
 
   if (
     Math.abs(dx) +
@@ -1664,8 +2996,23 @@ function dodge() {
   dx /= distance;
   dy /= distance;
 
-  S.x += dx * 90;
-  S.y += dy * 90;
+  S.x +=
+    dx *
+    (
+      S.awakened
+        ? 130
+        : 90
+    );
+
+  S.y +=
+    dy *
+    (
+      S.awakened
+        ? 130
+        : 90
+    );
+
+  addAwakening(1);
 
   burst(
     S.x,
@@ -1709,41 +3056,30 @@ if (!powerButton) {
   powerButton =
     document.createElement("button");
 
-  powerButton.id = "power";
-  powerButton.textContent = "POWER";
+  powerButton.id =
+    "power";
 
-  powerButton.style.position =
-    "fixed";
+  powerButton.textContent =
+    "POWER";
 
-  powerButton.style.right =
-    "22px";
-
-  powerButton.style.bottom =
-    "205px";
-
-  powerButton.style.width =
-    "88px";
-
-  powerButton.style.height =
-    "52px";
-
-  powerButton.style.borderRadius =
-    "18px";
-
-  powerButton.style.border =
-    "1px solid rgba(255,255,255,.25)";
-
-  powerButton.style.background =
-    "rgba(111,72,201,.85)";
-
-  powerButton.style.color =
-    "white";
-
-  powerButton.style.fontWeight =
-    "800";
-
-  powerButton.style.zIndex =
-    "20";
+  Object.assign(
+    powerButton.style,
+    {
+      position: "fixed",
+      right: "22px",
+      bottom: "205px",
+      width: "88px",
+      height: "52px",
+      borderRadius: "18px",
+      border:
+        "1px solid rgba(255,255,255,.25)",
+      background:
+        "rgba(111,72,201,.85)",
+      color: "white",
+      fontWeight: "800",
+      zIndex: "61"
+    }
+  );
 
   document.body.appendChild(
     powerButton
@@ -1751,7 +3087,7 @@ if (!powerButton) {
 }
 
 /* =========================
-   v1.3 TRUE MULTITOUCH
+   MULTITOUCH BUTTONS
 ========================= */
 
 function bindGameButton(
@@ -1786,35 +3122,23 @@ function bindGameButton(
   );
 }
 
-const castButton =
-  document.querySelector("#cast");
-
-const wardButton =
-  document.querySelector("#ward");
-
-const dodgeButton =
-  document.querySelector("#dodge");
-
-const cycleButton =
-  document.querySelector("#cycle");
-
 bindGameButton(
-  castButton,
+  document.querySelector("#cast"),
   castSpell
 );
 
 bindGameButton(
-  wardButton,
+  document.querySelector("#ward"),
   activateWard
 );
 
 bindGameButton(
-  dodgeButton,
+  document.querySelector("#dodge"),
   dodge
 );
 
 bindGameButton(
-  cycleButton,
+  document.querySelector("#cycle"),
   nextMagic
 );
 
@@ -1822,6 +3146,56 @@ bindGameButton(
   powerButton,
   usePower
 );
+
+bindGameButton(
+  awakenButton,
+  awaken
+);
+
+/* =========================
+   ENEMY PROJECTILES
+========================= */
+
+function enemyShoot(enemy) {
+  const dx =
+    S.x - enemy.x;
+
+  const dy =
+    S.y - enemy.y;
+
+  const distance =
+    Math.hypot(dx, dy) || 1;
+
+  S.enemyShots.push({
+    x: enemy.x,
+    y: enemy.y,
+
+    vx:
+      dx /
+      distance *
+      (enemy.boss ? 5 : 4),
+
+    vy:
+      dy /
+      distance *
+      (enemy.boss ? 5 : 4),
+
+    life: 130,
+
+    damage:
+      enemy.boss
+        ? 16
+        : 9,
+
+    color:
+      enemy.color,
+
+    r:
+      enemy.boss
+        ? 9
+        : 6
+  });
+}
 
 /* =========================
    GAME UPDATE
@@ -1832,11 +3206,16 @@ let previousTime =
 
 let enemyTimer = 0;
 
+let bossKillTarget = 20;
+
 function update(time) {
   const delta =
     Math.min(
       0.033,
-      (time - previousTime) /
+      (
+        time -
+        previousTime
+      ) /
       1000
     );
 
@@ -1850,32 +3229,89 @@ function update(time) {
   }
 
   if (S.dead) {
-    S.deathTimer += delta;
+    S.deathTimer +=
+      delta;
 
     if (
-      S.deathTimer >= 1.15
+      S.deathTimer >= 1.15 &&
+      !S.deathScreen
     ) {
       S.deathScreen = true;
+
+      deathOverlay.style.display =
+        "flex";
     }
   }
 
   if (!S.dead) {
+
+    /* MOVEMENT */
+
+    const moveSpeed =
+      S.awakened
+        ? 230
+        : 180;
+
     S.x +=
       joystick.x *
-      180 *
+      moveSpeed *
       delta;
 
     S.y +=
       joystick.y *
-      180 *
+      moveSpeed *
       delta;
+
+    /* MANA */
 
     S.mana =
       Math.min(
         100,
         S.mana +
-        8 * delta
+        (
+          S.awakened
+            ? 15
+            : 8
+        ) *
+        delta
       );
+
+    /* AWAKENING */
+
+    if (S.awakened) {
+      S.awakeningTime -=
+        delta;
+
+      if (
+        S.awakeningTime <= 0
+      ) {
+        S.awakened = false;
+        S.awakeningTime = 0;
+
+        notice(
+          "AWAKENING ENDED"
+        );
+      }
+    }
+
+    awakenFill.style.width =
+      S.awakened
+        ? (
+            S.awakeningTime /
+            10 *
+            100
+          ) + "%"
+        : S.awakening + "%";
+
+    awakenButton.style.display =
+      (
+        S.awakening >= 100 &&
+        !S.awakened
+      )
+        ? "block"
+        : "none";
+
+    /* POWER COOLDOWN */
 
     if (
       S.powerCooldown > 0
@@ -1886,14 +3322,14 @@ function update(time) {
           S.powerCooldown -
           delta
         );
-
-      powerButton.textContent =
-        S.powerCooldown > 0
-          ? Math.ceil(
-              S.powerCooldown
-            )
-          : "POWER";
     }
+
+    powerButton.textContent =
+      S.powerCooldown > 0
+        ? Math.ceil(
+            S.powerCooldown
+          )
+        : "POWER";
 
     if (S.ward > 0) {
       S.ward--;
@@ -1903,14 +3339,45 @@ function update(time) {
       S.armor -= delta;
     }
 
+    /* SPAWNING */
+
     enemyTimer += delta;
 
+    const maxEnemies =
+      Math.min(
+        14,
+        7 +
+        Math.floor(
+          S.rank / 2
+        )
+      );
+
+    const spawnDelay =
+      Math.max(
+        1.6,
+        3.1 -
+        S.rank *
+        0.08
+      );
+
     if (
-      enemyTimer > 3.2 &&
-      S.enemies.length < 8
+      enemyTimer >
+        spawnDelay &&
+      S.enemies.length <
+        maxEnemies
     ) {
       spawnEnemy();
+
       enemyTimer = 0;
+    }
+
+    if (
+      S.kills >=
+      bossKillTarget
+    ) {
+      spawnMiniBoss();
+
+      bossKillTarget += 25;
     }
 
     /* ENEMIES */
@@ -1918,62 +3385,307 @@ function update(time) {
     for (
       const enemy of S.enemies
     ) {
-      const dx =
+      let dx =
         S.x - enemy.x;
 
-      const dy =
+      let dy =
         S.y - enemy.y;
 
-      const distance =
-        Math.hypot(dx, dy) || 1;
+      let distance =
+        Math.hypot(
+          dx,
+          dy
+        ) || 1;
 
       const slowMultiplier =
         enemy.slow > 0
           ? 0.35
           : 1;
 
-      enemy.x +=
-        (dx / distance) *
-        48 *
-        slowMultiplier *
-        delta;
+      /* WARDEN SHIELD */
 
-      enemy.y +=
-        (dy / distance) *
-        48 *
-        slowMultiplier *
-        delta;
+      if (
+        enemy.shieldType
+      ) {
+        enemy.attackTimer -=
+          delta;
 
-      if (enemy.slow > 0) {
+        if (
+          enemy.attackTimer <= 0
+        ) {
+          enemy.shield =
+            enemy.boss
+              ? 100
+              : 35;
+
+          enemy.attackTimer =
+            enemy.boss
+              ? 5
+              : 7;
+        }
+      }
+
+      /* MAGE / BOSS RANGE */
+
+      if (
+        enemy.ranged
+      ) {
+        enemy.attackTimer -=
+          delta;
+
+        if (
+          distance > 220
+        ) {
+          enemy.x +=
+            dx /
+            distance *
+            enemy.speed *
+            slowMultiplier *
+            delta;
+
+          enemy.y +=
+            dy /
+            distance *
+            enemy.speed *
+            slowMultiplier *
+            delta;
+        }
+
+        else if (
+          distance < 150
+        ) {
+          enemy.x -=
+            dx /
+            distance *
+            enemy.speed *
+            0.65 *
+            delta;
+
+          enemy.y -=
+            dy /
+            distance *
+            enemy.speed *
+            0.65 *
+            delta;
+        }
+
+        if (
+          enemy.attackTimer <= 0
+        ) {
+          enemyShoot(enemy);
+
+          enemy.attackTimer =
+            enemy.boss
+              ? 1.1
+              : 2.2;
+        }
+      }
+
+      else {
+        enemy.x +=
+          dx /
+          distance *
+          enemy.speed *
+          slowMultiplier *
+          delta;
+
+        enemy.y +=
+          dy /
+          distance *
+          enemy.speed *
+          slowMultiplier *
+          delta;
+      }
+
+      /* DASHERS */
+
+      if (
+        enemy.dash
+      ) {
+        enemy.dashTimer -=
+          delta;
+
+        if (
+          enemy.dashTimer <= 0 &&
+          distance < 330
+        ) {
+          enemy.x +=
+            dx /
+            distance *
+            (
+              enemy.boss
+                ? 150
+                : 95
+            );
+
+          enemy.y +=
+            dy /
+            distance *
+            (
+              enemy.boss
+                ? 150
+                : 95
+            );
+
+          burst(
+            enemy.x,
+            enemy.y,
+            enemy.color,
+            15
+          );
+
+          enemy.dashTimer =
+            enemy.boss
+              ? 3
+              : 4;
+        }
+      }
+
+      /* STATUS */
+
+      if (
+        enemy.slow > 0
+      ) {
         enemy.slow -= delta;
       }
 
-      if (enemy.wet > 0) {
+      if (
+        enemy.wet > 0
+      ) {
         enemy.wet -= delta;
       }
 
-      if (enemy.burn > 0) {
+      if (
+        enemy.burn > 0
+      ) {
         enemy.burn -= delta;
-        enemy.hp -= 3 * delta;
+
+        enemy.hp -=
+          (
+            enemy.wet > 0
+              ? 4
+              : 3
+          ) *
+          delta;
       }
 
+      /* CONTACT */
+
+      dx =
+        S.x - enemy.x;
+
+      dy =
+        S.y - enemy.y;
+
+      distance =
+        Math.hypot(
+          dx,
+          dy
+        );
+
       if (
-        distance < 28 &&
+        distance <
+        enemy.r + 14 &&
         S.ward <= 0
       ) {
-        const damage =
+        const armorMultiplier =
           S.armor > 0
-            ? 4
-            : 12;
+            ? 0.35
+            : 1;
+
+        const damage =
+          enemy.damage *
+          armorMultiplier *
+          delta;
 
         S.hp =
           Math.max(
             0,
-            S.hp -
-            damage * delta
+            S.hp - damage
           );
+
+        addAwakening(
+          4 * delta
+        );
+
+        if (
+          enemy.leech
+        ) {
+          enemy.hp =
+            Math.min(
+              enemy.maxHp,
+              enemy.hp +
+              damage *
+              0.6
+            );
+        }
+
+        if (
+          enemy.element ===
+          "Ice"
+        ) {
+          joystick.x *= 0.98;
+          joystick.y *= 0.98;
+        }
       }
     }
+
+    /* ENEMY PROJECTILES */
+
+    for (
+      const shot of
+        S.enemyShots
+    ) {
+      shot.x += shot.vx;
+      shot.y += shot.vy;
+
+      shot.life--;
+
+      const distance =
+        Math.hypot(
+          shot.x - S.x,
+          shot.y - S.y
+        );
+
+      if (
+        distance <
+        shot.r + 14
+      ) {
+        if (
+          S.ward <= 0
+        ) {
+          const armorMultiplier =
+            S.armor > 0
+              ? 0.35
+              : 1;
+
+          S.hp =
+            Math.max(
+              0,
+              S.hp -
+              shot.damage *
+              armorMultiplier
+            );
+
+          addAwakening(4);
+        }
+
+        shot.life = 0;
+
+        burst(
+          shot.x,
+          shot.y,
+          shot.color,
+          12
+        );
+      }
+    }
+
+    S.enemyShots =
+      S.enemyShots.filter(
+        shot =>
+          shot.life > 0
+      );
 
     /* ZONES */
 
@@ -1988,7 +3700,8 @@ function update(time) {
         "gravity"
       ) {
         for (
-          const enemy of S.enemies
+          const enemy of
+            S.enemies
         ) {
           const dx =
             zone.x -
@@ -2009,19 +3722,23 @@ function update(time) {
             zone.radius
           ) {
             enemy.x +=
-              (dx / distance) *
+              dx /
+              distance *
               45 *
               delta;
 
             enemy.y +=
-              (dy / distance) *
+              dy /
+              distance *
               45 *
               delta;
           }
         }
       }
 
-      if (zone.tick <= 0) {
+      if (
+        zone.tick <= 0
+      ) {
         zone.tick = 0.5;
 
         if (
@@ -2031,7 +3748,8 @@ function update(time) {
             "void"
         ) {
           for (
-            const enemy of S.enemies
+            const enemy of
+              S.enemies
           ) {
             const distance =
               Math.hypot(
@@ -2046,11 +3764,14 @@ function update(time) {
               distance <
               zone.radius
             ) {
-              enemy.hp -=
+              hurtEnemy(
+                enemy,
                 zone.type ===
-                "void"
-                  ? 7
-                  : 6;
+                  "void"
+                  ? 8
+                  : 7,
+                zone.color
+              );
             }
           }
         }
@@ -2069,11 +3790,11 @@ function update(time) {
             distance <
             zone.radius
           ) {
-            S.hp =
-              Math.min(
-                100,
-                S.hp + 4
-              );
+            heal(
+              S.awakened
+                ? 7
+                : 4
+            );
           }
         }
       }
@@ -2085,7 +3806,7 @@ function update(time) {
           zone.life > 0
       );
 
-    /* SHOTS */
+    /* PLAYER SHOTS */
 
     for (
       const shot of S.shots
@@ -2096,7 +3817,8 @@ function update(time) {
       shot.life--;
 
       for (
-        const enemy of S.enemies
+        const enemy of
+          S.enemies
       ) {
         const distance =
           Math.hypot(
@@ -2111,22 +3833,22 @@ function update(time) {
           distance <
           enemy.r + 8
         ) {
-          enemy.hp -=
-            shot.power;
+          hurtEnemy(
+            enemy,
+            shot.power,
+            shot.color
+          );
 
           shot.life = 0;
 
-          burst(
-            enemy.x,
-            enemy.y,
-            shot.color,
-            12
-          );
+          addAwakening(2);
 
           break;
         }
       }
     }
+
+    /* DEFEATED */
 
     const defeated =
       S.enemies.filter(
@@ -2134,30 +3856,59 @@ function update(time) {
           enemy.hp <= 0
       );
 
-    if (defeated.length) {
-      S.essence +=
-        defeated.length;
+    if (
+      defeated.length
+    ) {
+      for (
+        const enemy of
+          defeated
+      ) {
+        S.essence +=
+          enemy.essence || 1;
 
-      S.xp +=
-        defeated.length *
-        10;
+        S.xp +=
+          enemy.xp || 10;
+
+        S.kills++;
+
+        addAwakening(
+          enemy.boss
+            ? 35
+            : enemy.elite
+              ? 12
+              : 6
+        );
+
+        burst(
+          enemy.x,
+          enemy.y,
+          enemy.color ||
+            "#ffffff",
+          enemy.boss
+            ? 100
+            : 25,
+          enemy.boss
+            ? 60
+            : 30,
+          enemy.boss
+            ? 2.5
+            : 1
+        );
+
+        if (
+          enemy.boss
+        ) {
+          notice(
+            "ARCANE SENTINEL DEFEATED"
+          );
+        }
+      }
 
       S.rank =
         1 +
         Math.floor(
           S.xp / 100
         );
-
-      defeated.forEach(
-        enemy => {
-          burst(
-            enemy.x,
-            enemy.y,
-            "#ffffff",
-            20
-          );
-        }
-      );
 
       saveGame();
     }
@@ -2174,7 +3925,9 @@ function update(time) {
           shot.life > 0
       );
 
-    if (S.hp <= 0) {
+    if (
+      S.hp <= 0
+    ) {
       die();
     }
   }
@@ -2212,7 +3965,7 @@ function update(time) {
 }
 
 /* =========================
-   DRAW
+   DRAW WORLD
 ========================= */
 
 function drawWorld() {
@@ -2232,18 +3985,40 @@ function drawWorld() {
       vw * 0.5,
       vh * 0.45,
 
-      Math.max(vw, vh)
+      Math.max(
+        vw,
+        vh
+      )
     );
 
-  background.addColorStop(
-    0,
-    "#172847"
-  );
+  if (S.awakened) {
+    const magic =
+      S.magic[
+        S.selected
+      ];
 
-  background.addColorStop(
-    1,
-    "#070912"
-  );
+    background.addColorStop(
+      0,
+      magic.color
+    );
+
+    background.addColorStop(
+      1,
+      "#05040d"
+    );
+  }
+
+  else {
+    background.addColorStop(
+      0,
+      "#172847"
+    );
+
+    background.addColorStop(
+      1,
+      "#070912"
+    );
+  }
 
   ctx.fillStyle =
     background;
@@ -2271,7 +4046,9 @@ function drawWorld() {
   /* GRID */
 
   ctx.strokeStyle =
-    "#2c395633";
+    S.awakened
+      ? "#ffffff18"
+      : "#2c395633";
 
   ctx.lineWidth = 1;
 
@@ -2369,7 +4146,7 @@ function drawWorld() {
     );
   }
 
-  /* POWER ZONES */
+  /* ZONES */
 
   for (
     const zone of S.zones
@@ -2404,6 +4181,7 @@ function drawWorld() {
       zone.color;
 
     ctx.lineWidth = 3;
+
     ctx.stroke();
   }
 
@@ -2415,7 +4193,7 @@ function drawWorld() {
     const enemy of S.enemies
   ) {
     let enemyColor =
-      "#bd334d";
+      enemy.color;
 
     if (
       enemy.slow > 0
@@ -2431,7 +4209,13 @@ function drawWorld() {
         "#ff7038";
     }
 
-    ctx.shadowBlur = 18;
+    ctx.shadowBlur =
+      enemy.boss
+        ? 35
+        : enemy.elite
+          ? 28
+          : 18;
+
     ctx.shadowColor =
       enemyColor;
 
@@ -2450,37 +4234,110 @@ function drawWorld() {
 
     ctx.fill();
 
+    if (
+      enemy.elite ||
+      enemy.boss
+    ) {
+      ctx.strokeStyle =
+        "#ffe49c";
+
+      ctx.lineWidth =
+        enemy.boss
+          ? 4
+          : 2;
+
+      ctx.stroke();
+    }
+
+    if (
+      enemy.shield > 0
+    ) {
+      ctx.strokeStyle =
+        "#a7b7ff";
+
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        enemy.x,
+        enemy.y,
+        enemy.r + 7,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.stroke();
+    }
+
     ctx.shadowBlur = 0;
+
+    const barWidth =
+      enemy.boss
+        ? 70
+        : 40;
 
     ctx.fillStyle =
       "#310812";
 
     ctx.fillRect(
-      enemy.x - 20,
-      enemy.y - 29,
-      40,
-      4
+      enemy.x -
+        barWidth / 2,
+
+      enemy.y -
+        enemy.r -
+        14,
+
+      barWidth,
+      5
     );
 
     ctx.fillStyle =
-      "#ff536c";
+      enemy.boss
+        ? "#e7a0ff"
+        : "#ff536c";
 
     ctx.fillRect(
-      enemy.x - 20,
-      enemy.y - 29,
+      enemy.x -
+        barWidth / 2,
 
-      40 *
-      Math.max(
-        0,
-        enemy.hp
-      ) /
-      (enemy.maxHp || 40),
+      enemy.y -
+        enemy.r -
+        14,
 
-      4
+      barWidth *
+        Math.max(
+          0,
+          enemy.hp
+        ) /
+        enemy.maxHp,
+
+      5
     );
+
+    if (
+      enemy.boss
+    ) {
+      ctx.fillStyle =
+        "#ffffff";
+
+      ctx.font =
+        "bold 11px sans-serif";
+
+      ctx.textAlign =
+        "center";
+
+      ctx.fillText(
+        "ARCANE SENTINEL",
+        enemy.x,
+        enemy.y -
+          enemy.r -
+          20
+      );
+    }
   }
 
-  /* SHOTS */
+  /* PLAYER SHOTS */
 
   for (
     const shot of S.shots
@@ -2498,7 +4355,34 @@ function drawWorld() {
     ctx.arc(
       shot.x,
       shot.y,
-      8,
+      S.awakened ? 10 : 8,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fill();
+  }
+
+  /* ENEMY SHOTS */
+
+  for (
+    const shot of
+      S.enemyShots
+  ) {
+    ctx.shadowBlur = 18;
+
+    ctx.shadowColor =
+      shot.color;
+
+    ctx.fillStyle =
+      shot.color;
+
+    ctx.beginPath();
+
+    ctx.arc(
+      shot.x,
+      shot.y,
+      shot.r,
       0,
       Math.PI * 2
     );
@@ -2545,7 +4429,59 @@ function drawWorld() {
         S.selected
       ].color;
 
-    ctx.shadowBlur = 30;
+    /* AWAKENING RINGS */
+
+    if (S.awakened) {
+      const pulse =
+        45 +
+        Math.sin(
+          performance.now() /
+          100
+        ) *
+        6;
+
+      ctx.globalAlpha =
+        0.35;
+
+      ctx.fillStyle =
+        playerColor;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        S.x,
+        S.y,
+        pulse,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+
+      ctx.strokeStyle =
+        "#ffffff";
+
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+
+      ctx.arc(
+        S.x,
+        S.y,
+        pulse + 12,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.stroke();
+    }
+
+    ctx.shadowBlur =
+      S.awakened
+        ? 50
+        : 30;
 
     ctx.shadowColor =
       playerColor;
@@ -2558,7 +4494,7 @@ function drawWorld() {
     ctx.arc(
       S.x,
       S.y,
-      14,
+      S.awakened ? 17 : 14,
       0,
       Math.PI * 2
     );
@@ -2568,13 +4504,18 @@ function drawWorld() {
     ctx.strokeStyle =
       playerColor;
 
-    ctx.lineWidth = 3;
+    ctx.lineWidth =
+      S.awakened
+        ? 5
+        : 3;
 
     ctx.stroke();
 
     ctx.shadowBlur = 0;
 
-    if (S.ward > 0) {
+    if (
+      S.ward > 0
+    ) {
       ctx.strokeStyle =
         "#b8a8ff";
 
@@ -2596,135 +4537,37 @@ function drawWorld() {
 
   ctx.restore();
 
-  /* DEATH SCREEN */
+  /* AWAKENING TEXT */
 
-  if (S.deathScreen) {
-    ctx.fillStyle =
-      "rgba(5,4,12,.84)";
-
-    ctx.fillRect(
-      0,
-      0,
-      vw,
-      vh
-    );
-
+  if (
+    S.awakened &&
+    S.awakeningTime > 8.7
+  ) {
     ctx.textAlign =
       "center";
 
     ctx.shadowBlur = 30;
 
     ctx.shadowColor =
-      "#9d6cff";
+      S.magic[
+        S.selected
+      ].color;
 
     ctx.fillStyle =
       "#ffffff";
 
     ctx.font =
-      "bold 42px sans-serif";
+      "900 25px sans-serif";
 
     ctx.fillText(
-      "YOU DIED",
+      awakeningName(),
       vw / 2,
-      vh / 2 - 45
+      vh * 0.28
     );
 
     ctx.shadowBlur = 0;
-
-    ctx.fillStyle =
-      "#c8c0df";
-
-    ctx.font =
-      "17px sans-serif";
-
-    ctx.fillText(
-      "Your magic awaits rebirth",
-      vw / 2,
-      vh / 2 - 5
-    );
-
-    const bx =
-      vw / 2 - 90;
-
-    const by =
-      vh / 2 + 35;
-
-    ctx.shadowBlur = 20;
-
-    ctx.shadowColor =
-      "#9d6cff";
-
-    ctx.fillStyle =
-      "#6f48c9";
-
-    ctx.fillRect(
-      bx,
-      by,
-      180,
-      56
-    );
-
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle =
-      "#ffffff";
-
-    ctx.font =
-      "bold 18px sans-serif";
-
-    ctx.fillText(
-      "RESPAWN",
-      vw / 2,
-      by + 36
-    );
   }
 }
-
-/* =========================
-   RESPAWN INPUT
-========================= */
-
-C.style.touchAction = "none";
-
-C.addEventListener(
-  "pointerdown",
-  event => {
-    if (
-      !S.deathScreen
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-
-    const rect =
-      C.getBoundingClientRect();
-
-    const x =
-      event.clientX -
-      rect.left;
-
-    const y =
-      event.clientY -
-      rect.top;
-
-    const bx =
-      vw / 2 - 90;
-
-    const by =
-      vh / 2 + 35;
-
-    if (
-      x >= bx &&
-      x <= bx + 180 &&
-      y >= by &&
-      y <= by + 56
-    ) {
-      respawn();
-    }
-  },
-  { passive: false }
-);
 
 /* =========================
    START
@@ -2735,8 +4578,12 @@ renderBook();
 renderTree();
 updateHUD();
 
-notice("ARCANE FORGE v1.3");
+notice(
+  "ARCANE FORGE v1.4 — AWAKENING"
+);
 
-requestAnimationFrame(update);
+requestAnimationFrame(
+  update
+);
 
 })();
