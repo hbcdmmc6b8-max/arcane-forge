@@ -5068,6 +5068,557 @@ if (desktopMode) {
   );
 }
 
+/* =========================================================
+   MAIN MENU
+========================================================= */
+
+const mainMenu = document.createElement("div");
+mainMenu.id = "mainMenu";
+
+mainMenu.innerHTML = `
+  <div class="menuParticles"></div>
+
+  <div class="menuPanel">
+
+    <div class="menuRune">✦</div>
+
+    <h1>ARCANE FORGE</h1>
+
+    <div class="menuSubtitle">
+      FORGE YOUR MAGIC. BECOME SOMETHING GREATER.
+    </div>
+
+    <button id="menuPlay" class="menuButton menuPrimary">
+      PLAY
+    </button>
+
+    <button id="menuForge" class="menuButton">
+      FORGE
+    </button>
+
+    <button id="menuSettings" class="menuButton">
+      SETTINGS
+    </button>
+
+    <div class="menuVersion">
+      v1.4 • MOBILE + DESKTOP
+    </div>
+
+  </div>
+`;
+
+document.body.appendChild(mainMenu);
+
+
+/* =========================================================
+   MENU STYLE
+========================================================= */
+
+const mainMenuStyle = document.createElement("style");
+
+mainMenuStyle.textContent = `
+
+#mainMenu {
+  position: fixed;
+  inset: 0;
+
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      #242c52 0%,
+      #101425 38%,
+      #05060b 75%
+    );
+
+  opacity: 1;
+
+  transition:
+    opacity .45s ease;
+
+  overflow: hidden;
+}
+
+
+/* magical background glow */
+
+#mainMenu::before {
+  content: "";
+
+  position: absolute;
+
+  width: 620px;
+  height: 620px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(150,110,255,.18),
+      rgba(80,60,180,.06) 45%,
+      transparent 70%
+    );
+
+  animation:
+    menuPulse 4s ease-in-out infinite;
+}
+
+
+/* rotating magical ring */
+
+#mainMenu::after {
+  content: "";
+
+  position: absolute;
+
+  width: 430px;
+  height: 430px;
+
+  border-radius: 50%;
+
+  border:
+    1px solid rgba(190,170,255,.13);
+
+  box-shadow:
+    0 0 70px rgba(120,90,255,.08),
+    inset 0 0 70px rgba(120,90,255,.05);
+
+  animation:
+    menuRotate 18s linear infinite;
+}
+
+
+.menuPanel {
+  position: relative;
+
+  z-index: 2;
+
+  width: min(88vw, 410px);
+
+  padding:
+    36px
+    28px
+    25px;
+
+  text-align: center;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18,22,40,.92),
+      rgba(8,10,20,.95)
+    );
+
+  border:
+    1px solid rgba(165,145,255,.32);
+
+  border-radius: 25px;
+
+  box-shadow:
+    0 30px 100px rgba(0,0,0,.65),
+    0 0 60px rgba(110,80,255,.10);
+
+  backdrop-filter:
+    blur(14px);
+}
+
+
+.menuRune {
+  margin-bottom: 8px;
+
+  font-size: 34px;
+
+  color: #c5b1ff;
+
+  text-shadow:
+    0 0 12px #9e7cff,
+    0 0 35px #7656ff;
+
+  animation:
+    runeFloat 2.5s ease-in-out infinite;
+}
+
+
+.menuPanel h1 {
+  margin:
+    0
+    0
+    7px;
+
+  font-size:
+    clamp(
+      30px,
+      8vw,
+      48px
+    );
+
+  letter-spacing: .12em;
+
+  color: #f5f2ff;
+
+  text-shadow:
+    0 0 15px rgba(180,150,255,.65),
+    0 0 40px rgba(110,70,255,.35);
+}
+
+
+.menuSubtitle {
+  margin-bottom: 30px;
+
+  color: #9da5c8;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  letter-spacing: .16em;
+}
+
+
+.menuButton {
+  display: block;
+
+  width: 100%;
+
+  height: 54px;
+
+  margin: 10px 0;
+
+  border:
+    1px solid #454d72;
+
+  border-radius: 14px;
+
+  background:
+    rgba(24,29,50,.88);
+
+  color: #f3f4ff;
+
+  font-weight: 900;
+
+  letter-spacing: .12em;
+
+  cursor: pointer;
+
+  touch-action: manipulation;
+
+  transition:
+    transform .12s,
+    background .2s,
+    border-color .2s,
+    box-shadow .2s;
+}
+
+
+.menuButton:hover {
+  background: #282e50;
+
+  border-color: #8276bd;
+
+  box-shadow:
+    0 0 20px rgba(150,120,255,.15);
+}
+
+
+.menuButton:active {
+  transform: scale(.97);
+}
+
+
+.menuPrimary {
+  border:
+    1px solid #bca45e;
+
+  background:
+    linear-gradient(
+      135deg,
+      #664711,
+      #8a6420
+    );
+
+  box-shadow:
+    0 0 25px rgba(255,205,90,.08);
+}
+
+
+.menuPrimary:hover {
+  background:
+    linear-gradient(
+      135deg,
+      #795617,
+      #9e7428
+    );
+
+  border-color: #e1c56d;
+}
+
+
+.menuVersion {
+  margin-top: 24px;
+
+  color: #646b8d;
+
+  font-size: 9px;
+
+  letter-spacing: .13em;
+}
+
+
+@keyframes menuPulse {
+
+  0%,
+  100% {
+    transform: scale(.92);
+    opacity: .65;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+}
+
+
+@keyframes menuRotate {
+
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+
+}
+
+
+@keyframes runeFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+}
+
+
+/* phone adjustments */
+
+@media(max-width:600px) {
+
+  .menuPanel {
+    width: 88vw;
+
+    padding:
+      30px
+      22px
+      22px;
+  }
+
+  .menuButton {
+    height: 52px;
+  }
+
+}
+
+`;
+
+document.head.appendChild(mainMenuStyle);
+
+
+/* =========================================================
+   MENU STATE
+========================================================= */
+
+let menuOpen = true;
+
+function openMainMenu() {
+
+  menuOpen = true;
+
+  mainMenu.style.display =
+    "flex";
+
+  requestAnimationFrame(() => {
+    mainMenu.style.opacity = "1";
+  });
+
+}
+
+
+function closeMainMenu() {
+
+  mainMenu.style.opacity = "0";
+
+  setTimeout(() => {
+
+    mainMenu.style.display =
+      "none";
+
+    menuOpen = false;
+
+  }, 450);
+
+}
+
+
+/* =========================================================
+   PLAY
+========================================================= */
+
+document
+  .getElementById("menuPlay")
+  .addEventListener(
+    "click",
+    () => {
+
+      closeMainMenu();
+
+      notice(
+        "ENTERING THE ARCANE WORLD"
+      );
+
+    }
+  );
+
+
+/* =========================================================
+   FORGE
+========================================================= */
+
+document
+  .getElementById("menuForge")
+  .addEventListener(
+    "click",
+    () => {
+
+      /*
+        Temporarily hide menu
+        but KEEP menuOpen true.
+
+        This means gameplay
+        remains paused.
+      */
+
+      mainMenu.style.display =
+        "none";
+
+      const forge =
+        document.getElementById(
+          "forgeModal"
+        );
+
+      if (forge) {
+
+        forge.classList.add(
+          "open"
+        );
+
+        renderForge();
+
+      }
+
+    }
+  );
+
+
+/* =========================================================
+   RETURN TO MENU AFTER FORGE
+========================================================= */
+
+const forgeModal =
+  document.getElementById(
+    "forgeModal"
+  );
+
+if (forgeModal) {
+
+  const forgeClose =
+    forgeModal.querySelector(
+      ".close"
+    );
+
+  if (forgeClose) {
+
+    forgeClose.addEventListener(
+      "click",
+      () => {
+
+        if (menuOpen) {
+
+          setTimeout(() => {
+
+            mainMenu.style.display =
+              "flex";
+
+            mainMenu.style.opacity =
+              "1";
+
+          }, 50);
+
+        }
+
+      }
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
+
+document
+  .getElementById(
+    "menuSettings"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      /*
+        Settings screen comes next.
+
+        For now this confirms
+        the button works.
+      */
+
+      notice(
+        "SETTINGS — COMING NEXT"
+      );
+
+    }
+  );
+
+
+/* =========================================================
+   PAUSE GAME WHILE MENU IS OPEN
+========================================================= */
+
+/*
+  Other systems can check:
+
+      if (menuOpen) return;
+
+  We'll connect this to the main
+  game loop if your current loop
+  doesn't already support pausing.
+*/
+
+
 /* =========================
    START
 ========================= */
