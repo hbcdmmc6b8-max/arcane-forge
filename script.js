@@ -21,6 +21,11 @@ const supabaseClient =
 let multiplayerChannel = null;
 let multiplayerRoom = null;
 
+/* Remote players currently connected to this room. */
+const multiplayerPlayers = new Map();
+
+let multiplayerSendTimer = 0;
+
 const multiplayerId =
   crypto.randomUUID();
 
@@ -59,6 +64,7 @@ function connectMultiplayer(roomCode) {
     );
   }
 
+  multiplayerPlayers.clear();
   multiplayerRoom = code;
 
   multiplayerChannel =
@@ -87,9 +93,32 @@ function connectMultiplayer(roomCode) {
           return;
         }
 
-        console.log(
-          "OTHER PLAYER:",
-          payload
+        const x = Number(payload.x);
+        const y = Number(payload.y);
+        const hp = Number(payload.hp);
+
+        if (
+          !Number.isFinite(x) ||
+          !Number.isFinite(y)
+        ) {
+          return;
+        }
+
+        multiplayerPlayers.set(
+          payload.id,
+          {
+            id: payload.id,
+            x,
+            y,
+            hp: Number.isFinite(hp)
+              ? Math.max(0, Math.min(100, hp))
+              : 100,
+            magic:
+              typeof payload.magic === "string"
+                ? payload.magic
+                : "Fire",
+            lastSeen: performance.now()
+          }
         );
       }
     )
@@ -145,7 +174,7 @@ function sendPlayerState() {
       hp: S.hp,
       magic: S.selected
     }
-  });
+  }).catch(() => {});
 }
 const C = document.querySelector("#c");
 const ctx = C.getContext("2d");
@@ -3375,6 +3404,32 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
   previousTime = time;
 
   if (
+    multiplayerChannel &&
+    multiplayerRoom
+  ) {
+    multiplayerSendTimer += delta;
+
+    if (multiplayerSendTimer >= 0.1) {
+      multiplayerSendTimer = 0;
+      sendPlayerState();
+    }
+
+    const now = performance.now();
+
+    for (
+      const [id, player] of
+        multiplayerPlayers
+    ) {
+      if (
+        now - player.lastSeen >
+        10000
+      ) {
+        multiplayerPlayers.delete(id);
+      }
+    }
+  }
+
+  if (
     S.hp <= 0 &&
     !S.dead
   ) {
@@ -4573,6 +4628,71 @@ function drawWorld() {
   }
 
   ctx.globalAlpha = 1;
+
+  /* MULTIPLAYER PLAYERS */
+
+  for (
+    const player of
+      multiplayerPlayers.values()
+  ) {
+    const remoteMagic =
+      S.magic[player.magic];
+
+    const playerColor =
+      remoteMagic
+        ? remoteMagic.color
+        : "#8fd3ff";
+
+    ctx.shadowBlur = 24;
+    ctx.shadowColor = playerColor;
+    ctx.fillStyle = "#dff6ff";
+
+    ctx.beginPath();
+    ctx.arc(
+      player.x,
+      player.y,
+      14,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    ctx.strokeStyle = playerColor;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle =
+      "rgba(20,8,18,.9)";
+    ctx.fillRect(
+      player.x - 22,
+      player.y - 31,
+      44,
+      5
+    );
+
+    ctx.fillStyle = playerColor;
+    ctx.fillRect(
+      player.x - 22,
+      player.y - 31,
+      44 *
+        Math.max(0, player.hp) /
+        100,
+      5
+    );
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font =
+      "bold 10px sans-serif";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+      player.magic,
+      player.x,
+      player.y - 38
+    );
+  }
 
   /* PLAYER */
 
@@ -5773,6 +5893,11 @@ document
       notice(
         `ROOM ${code} CREATED`
       );
+
+      multiplayerMenu.style.display =
+        "none";
+
+      closeMainMenu();
     }
   );
 
@@ -5810,6 +5935,11 @@ document
       notice(
         "JOINING ROOM..."
       );
+
+      multiplayerMenu.style.display =
+        "none";
+
+      closeMainMenu();
     }
   );
 
