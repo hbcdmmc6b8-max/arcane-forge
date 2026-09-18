@@ -516,9 +516,8 @@ Object.assign(
   awakenBox.style,
   {
     position: "fixed",
-    left: "50%",
-    bottom: "145px",
-    transform: "translateX(-50%)",
+    right: "16px",
+    top: "82px",
     width: "180px",
     height: "13px",
     background: "rgba(8,10,20,.85)",
@@ -557,9 +556,8 @@ Object.assign(
   awakenButton.style,
   {
     position: "fixed",
-    left: "50%",
-    bottom: "165px",
-    transform: "translateX(-50%)",
+    right: "16px",
+    top: "105px",
     width: "130px",
     height: "48px",
     borderRadius: "18px",
