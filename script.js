@@ -4567,6 +4567,507 @@ function drawWorld() {
   }
 }
 
+
+/* =========================================================
+   DESKTOP SUPPORT PATCH
+========================================================= */
+
+const desktopMode =
+  matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+const desktopKeys = {
+  up: false,
+  down: false,
+  left: false,
+  right: false
+};
+
+const mouseAim = {
+  x: innerWidth / 2,
+  y: innerHeight / 2
+};
+
+if (desktopMode) {
+
+  /* =========================
+     HIDE MOBILE CONTROLS
+  ========================= */
+
+  if (stick) {
+    stick.style.display = "none";
+  }
+
+  const mobileControls =
+    document.querySelector(".controls");
+
+  if (mobileControls) {
+    mobileControls.style.display = "none";
+  }
+
+  /* =========================
+     DESKTOP CONTROL GUIDE
+  ========================= */
+
+  const desktopGuide =
+    document.createElement("div");
+
+  desktopGuide.id =
+    "desktopControls";
+
+  desktopGuide.innerHTML = `
+    <b>DESKTOP CONTROLS</b><br>
+    WASD — Move<br>
+    LMB — Cast<br>
+    RMB — Ward<br>
+    SPACE — Dodge<br>
+    Q — Power<br>
+    E — Next Magic<br>
+    R — Awaken
+  `;
+
+  Object.assign(
+    desktopGuide.style,
+    {
+      position: "fixed",
+      left: "16px",
+      bottom: "16px",
+
+      padding: "11px 14px",
+
+      background:
+        "rgba(8,10,19,.82)",
+
+      border:
+        "1px solid rgba(180,160,255,.35)",
+
+      borderRadius: "14px",
+
+      color: "#d9dcf1",
+
+      fontSize: "11px",
+      lineHeight: "1.55",
+
+      zIndex: "30",
+
+      pointerEvents: "none",
+
+      backdropFilter:
+        "blur(8px)"
+    }
+  );
+
+  document.body.appendChild(
+    desktopGuide
+  );
+
+  /* =========================
+     KEYBOARD
+  ========================= */
+
+  function isTyping() {
+    const active =
+      document.activeElement;
+
+    return (
+      active &&
+      (
+        active.tagName === "INPUT" ||
+        active.tagName === "TEXTAREA" ||
+        active.isContentEditable
+      )
+    );
+  }
+
+  function updateDesktopMovement() {
+    let x = 0;
+    let y = 0;
+
+    if (desktopKeys.left) {
+      x -= 1;
+    }
+
+    if (desktopKeys.right) {
+      x += 1;
+    }
+
+    if (desktopKeys.up) {
+      y -= 1;
+    }
+
+    if (desktopKeys.down) {
+      y += 1;
+    }
+
+    const distance =
+      Math.hypot(x, y);
+
+    if (distance > 0) {
+      x /= distance;
+      y /= distance;
+    }
+
+    joystick.x = x;
+    joystick.y = y;
+  }
+
+  window.addEventListener(
+    "keydown",
+    event => {
+
+      if (isTyping()) {
+        return;
+      }
+
+      const key =
+        event.key.toLowerCase();
+
+      if (
+        key === "w" ||
+        key === "arrowup"
+      ) {
+        desktopKeys.up = true;
+        event.preventDefault();
+      }
+
+      if (
+        key === "s" ||
+        key === "arrowdown"
+      ) {
+        desktopKeys.down = true;
+        event.preventDefault();
+      }
+
+      if (
+        key === "a" ||
+        key === "arrowleft"
+      ) {
+        desktopKeys.left = true;
+        event.preventDefault();
+      }
+
+      if (
+        key === "d" ||
+        key === "arrowright"
+      ) {
+        desktopKeys.right = true;
+        event.preventDefault();
+      }
+
+      updateDesktopMovement();
+
+      /*
+        Don't repeatedly activate abilities
+        when a key is held down.
+      */
+
+      if (event.repeat) {
+        return;
+      }
+
+      if (key === " ") {
+        event.preventDefault();
+        dodge();
+      }
+
+      if (key === "q") {
+        event.preventDefault();
+        usePower();
+      }
+
+      if (key === "e") {
+        event.preventDefault();
+        nextMagic();
+      }
+
+      if (key === "r") {
+        event.preventDefault();
+
+        if (
+          S.awakening >= 100 &&
+          !S.awakened
+        ) {
+          awaken();
+        }
+      }
+    }
+  );
+
+  window.addEventListener(
+    "keyup",
+    event => {
+
+      const key =
+        event.key.toLowerCase();
+
+      if (
+        key === "w" ||
+        key === "arrowup"
+      ) {
+        desktopKeys.up = false;
+      }
+
+      if (
+        key === "s" ||
+        key === "arrowdown"
+      ) {
+        desktopKeys.down = false;
+      }
+
+      if (
+        key === "a" ||
+        key === "arrowleft"
+      ) {
+        desktopKeys.left = false;
+      }
+
+      if (
+        key === "d" ||
+        key === "arrowright"
+      ) {
+        desktopKeys.right = false;
+      }
+
+      updateDesktopMovement();
+    }
+  );
+
+  window.addEventListener(
+    "blur",
+    () => {
+      desktopKeys.up = false;
+      desktopKeys.down = false;
+      desktopKeys.left = false;
+      desktopKeys.right = false;
+
+      updateDesktopMovement();
+    }
+  );
+
+  /* =========================
+     MOUSE AIM
+  ========================= */
+
+  window.addEventListener(
+    "mousemove",
+    event => {
+      mouseAim.x =
+        event.clientX;
+
+      mouseAim.y =
+        event.clientY;
+    }
+  );
+
+  /* =========================
+     DESKTOP CAST
+  ========================= */
+
+  function desktopCast() {
+    if (S.dead) {
+      return;
+    }
+
+    const cost =
+      S.awakened
+        ? 5
+        : 10;
+
+    if (S.mana < cost) {
+      notice(
+        "Not enough mana"
+      );
+
+      return;
+    }
+
+    S.mana -= cost;
+
+    addAwakening(3);
+
+    /*
+      Player is always rendered
+      in the center of the screen.
+
+      Therefore cursor direction
+      can be calculated from the
+      screen center.
+    */
+
+    let dx =
+      mouseAim.x -
+      vw / 2;
+
+    let dy =
+      mouseAim.y -
+      vh / 2;
+
+    const distance =
+      Math.hypot(
+        dx,
+        dy
+      ) || 1;
+
+    dx /= distance;
+    dy /= distance;
+
+    const magic =
+      S.magic[
+        S.selected
+      ];
+
+    const count =
+      S.awakened
+        ? 3
+        : 1;
+
+    for (
+      let i = 0;
+      i < count;
+      i++
+    ) {
+
+      const spread =
+        count === 1
+          ? 0
+          : (i - 1) * 0.16;
+
+      const cos =
+        Math.cos(spread);
+
+      const sin =
+        Math.sin(spread);
+
+      const sx =
+        dx * cos -
+        dy * sin;
+
+      const sy =
+        dx * sin +
+        dy * cos;
+
+      S.shots.push({
+        x: S.x,
+        y: S.y,
+
+        vx:
+          sx *
+          (
+            S.awakened
+              ? 11
+              : 9
+          ),
+
+        vy:
+          sy *
+          (
+            S.awakened
+              ? 11
+              : 9
+          ),
+
+        life:
+          S.awakened
+            ? 80
+            : 65,
+
+        power:
+          S.awakened
+            ? 22
+            : 14,
+
+        color:
+          magic.color
+      });
+    }
+
+    burst(
+      S.x,
+      S.y,
+      magic.color,
+      S.awakened
+        ? 18
+        : 8
+    );
+  }
+
+  /* =========================
+     MOUSE BUTTONS
+  ========================= */
+
+  window.addEventListener(
+    "mousedown",
+    event => {
+
+      /*
+        Ignore clicks on UI.
+      */
+
+      if (
+        event.target.closest(
+          "button, .modal, .nav"
+        )
+      ) {
+        return;
+      }
+
+      /*
+        LEFT CLICK
+        Cast toward mouse.
+      */
+
+      if (event.button === 0) {
+        desktopCast();
+      }
+
+      /*
+        RIGHT CLICK
+        Ward.
+      */
+
+      if (event.button === 2) {
+        event.preventDefault();
+        activateWard();
+      }
+    }
+  );
+
+  /* Disable browser right-click menu */
+
+  window.addEventListener(
+    "contextmenu",
+    event => {
+
+      if (
+        !event.target.closest(
+          ".modal"
+        )
+      ) {
+        event.preventDefault();
+      }
+    }
+  );
+
+  /* =========================
+     DESKTOP CURSOR
+  ========================= */
+
+  document.body.style.cursor =
+    "crosshair";
+
+  document
+    .querySelectorAll(
+      "button, .magic"
+    )
+    .forEach(element => {
+      element.style.cursor =
+        "pointer";
+    });
+
+  notice(
+    "DESKTOP CONTROLS ENABLED"
+  );
+}
+
 /* =========================
    START
 ========================= */
