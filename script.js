@@ -5629,6 +5629,182 @@ function closeMainMenu() {
 ========================================================= */
 
 document
+/* =========================================================
+   MULTIPLAYER MENU
+========================================================= */
+
+const multiplayerMenu =
+  document.createElement("div");
+
+multiplayerMenu.id =
+  "multiplayerMenu";
+
+multiplayerMenu.style.display =
+  "none";
+
+multiplayerMenu.innerHTML = `
+  <div class="menuPanel">
+
+    <div class="menuRune">✦</div>
+
+    <h1>MULTIPLAYER</h1>
+
+    <div class="menuSubtitle">
+      ENTER THE ARCANE WORLD TOGETHER
+    </div>
+
+    <button
+      id="createRoom"
+      class="menuButton menuPrimary"
+    >
+      CREATE ROOM
+    </button>
+
+    <button
+      id="joinRoom"
+      class="menuButton"
+    >
+      JOIN ROOM
+    </button>
+
+    <button
+      id="multiplayerBack"
+      class="menuButton"
+    >
+      BACK
+    </button>
+
+    <div
+      id="multiplayerStatus"
+      class="menuVersion"
+    >
+      NOT CONNECTED
+    </div>
+
+  </div>
+`;
+
+Object.assign(
+  multiplayerMenu.style,
+  {
+    position: "fixed",
+    inset: "0",
+    zIndex: "1100",
+    alignItems: "center",
+    justifyContent: "center",
+    background:
+      "radial-gradient(circle at 50% 35%, #242c52 0%, #101425 38%, #05060b 75%)"
+  }
+);
+
+document.body.appendChild(
+  multiplayerMenu
+);
+
+
+/* OPEN MULTIPLAYER */
+
+document
+  .getElementById(
+    "menuMultiplayer"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      mainMenu.style.display =
+        "none";
+
+      multiplayerMenu.style.display =
+        "flex";
+    }
+  );
+
+
+/* BACK */
+
+document
+  .getElementById(
+    "multiplayerBack"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      multiplayerMenu.style.display =
+        "none";
+
+      mainMenu.style.display =
+        "flex";
+
+      mainMenu.style.opacity =
+        "1";
+    }
+  );
+
+
+/* CREATE ROOM */
+
+document
+  .getElementById(
+    "createRoom"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      const code =
+        createMultiplayerRoom();
+
+      document
+        .getElementById(
+          "multiplayerStatus"
+        )
+        .textContent =
+          `ROOM: ${code}`;
+
+      notice(
+        `ROOM ${code} CREATED`
+      );
+    }
+  );
+
+
+/* JOIN ROOM */
+
+document
+  .getElementById(
+    "joinRoom"
+  )
+  .addEventListener(
+    "click",
+    () => {
+
+      const code =
+        prompt(
+          "ENTER 6-DIGIT ROOM CODE"
+        );
+
+      if (!code) return;
+
+      connectMultiplayer(
+        code
+      );
+
+      document
+        .getElementById(
+          "multiplayerStatus"
+        )
+        .textContent =
+          `ROOM: ${code
+            .trim()
+            .toUpperCase()}`;
+
+      notice(
+        "JOINING ROOM..."
+      );
+    }
+  );
   .getElementById("menuPlay")
   .addEventListener(
     "click",
