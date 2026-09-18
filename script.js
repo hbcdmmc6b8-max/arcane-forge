@@ -46,7 +46,7 @@ const recipes = {
   "Force+Shadow": ["Void","#62418f",["dark","control","drain"]]
 };
 
-let S = {
+const S = {
   hp: 100,
   mana: 100,
 
@@ -76,7 +76,7 @@ let S = {
   armor: 0
 };
 
-Object.entries(base).forEach(([name,data]) => {
+Object.entries(base).forEach(([name, data]) => {
   S.magic[name] = {
     color: data[0],
     traits: data[1],
@@ -89,8 +89,9 @@ Object.entries(base).forEach(([name,data]) => {
 ========================= */
 
 try {
-  const saved =
-    JSON.parse(localStorage.arcaneForge || "null");
+  const saved = JSON.parse(
+    localStorage.arcaneForge || "null"
+  );
 
   if (saved) {
     S.magic = saved.magic || S.magic;
@@ -102,12 +103,11 @@ try {
 
 function saveGame() {
   try {
-    localStorage.arcaneForge =
-      JSON.stringify({
-        magic: S.magic,
-        essence: S.essence,
-        xp: S.xp
-      });
+    localStorage.arcaneForge = JSON.stringify({
+      magic: S.magic,
+      essence: S.essence,
+      xp: S.xp
+    });
   } catch (e) {}
 }
 
@@ -120,20 +120,36 @@ function hash(text) {
 
   for (const char of text) {
     h ^= char.charCodeAt(0);
-    h = Math.imul(h,16777619);
+    h = Math.imul(h, 16777619);
   }
 
   return h >>> 0;
 }
 
 const prefixes = [
-  "Astral","Primal","Nova","Rift","Aether",
-  "Eclipse","Tempest","Runic","Celestial","Arcane"
+  "Astral",
+  "Primal",
+  "Nova",
+  "Rift",
+  "Aether",
+  "Eclipse",
+  "Tempest",
+  "Runic",
+  "Celestial",
+  "Arcane"
 ];
 
 const suffixes = [
-  "Flare","Surge","Veil","Pulse","Storm",
-  "Flux","Wave","Core","Rift","Bloom"
+  "Flare",
+  "Surge",
+  "Veil",
+  "Pulse",
+  "Storm",
+  "Flux",
+  "Wave",
+  "Core",
+  "Rift",
+  "Bloom"
 ];
 
 function generateMagic(parents) {
@@ -147,9 +163,9 @@ function generateMagic(parents) {
 
   const traits = [
     ...new Set(
-      parents.flatMap(p => S.magic[p].traits)
+      parents.flatMap(parent => S.magic[parent].traits)
     )
-  ].slice(0,8);
+  ].slice(0, 8);
 
   return [
     name,
@@ -170,9 +186,11 @@ function notice(text) {
   box.textContent = text;
   box.classList.add("show");
 
-  setTimeout(() => {
+  clearTimeout(notice.timer);
+
+  notice.timer = setTimeout(() => {
     box.classList.remove("show");
-  },1800);
+  }, 1800);
 }
 
 function updateHUD() {
@@ -195,6 +213,10 @@ function updateHUD() {
   }
 }
 
+/* =========================
+   FORGE
+========================= */
+
 function renderForge() {
   const grid = document.querySelector("#forgeGrid");
   const slots = document.querySelector("#forgeSlots");
@@ -203,7 +225,7 @@ function renderForge() {
 
   grid.innerHTML = "";
 
-  Object.entries(S.magic).forEach(([name,magic]) => {
+  Object.entries(S.magic).forEach(([name, magic]) => {
     const button = document.createElement("button");
 
     button.className =
@@ -211,18 +233,19 @@ function renderForge() {
       (S.forge.includes(name) ? " sel" : "");
 
     button.innerHTML = `
-      <span class="dot"
-      style="background:${magic.color};color:${magic.color}">
-      </span>
+      <span
+        class="dot"
+        style="background:${magic.color};color:${magic.color}"
+      ></span>
       <b>${name}</b><br>
       <small>${magic.traits.join(" · ")}</small>
     `;
 
-    button.addEventListener("click",() => {
-      const i = S.forge.indexOf(name);
+    button.addEventListener("click", () => {
+      const index = S.forge.indexOf(name);
 
-      if (i >= 0) {
-        S.forge.splice(i,1);
+      if (index >= 0) {
+        S.forge.splice(index, 1);
       } else if (S.forge.length < 3) {
         S.forge.push(name);
       }
@@ -250,8 +273,9 @@ function transmute() {
   const parents = [...S.forge].sort();
   const key = parents.join("+");
 
-  let result =
-    recipes[key] || generateMagic(parents);
+  const result =
+    recipes[key] ||
+    generateMagic(parents);
 
   let name = result[0];
   const color = result[1];
@@ -260,7 +284,7 @@ function transmute() {
   if (
     S.magic[name] &&
     JSON.stringify(S.magic[name].parents) !==
-    JSON.stringify(parents)
+      JSON.stringify(parents)
   ) {
     name += " " + (hash(key) % 97);
   }
@@ -276,8 +300,9 @@ function transmute() {
     S.xp += 25;
     S.rank = 1 + Math.floor(S.xp / 100);
 
-    notice("NEW MAGIC: " + name);
     saveGame();
+
+    notice("NEW MAGIC: " + name);
   } else {
     notice(name + " already discovered");
   }
@@ -293,14 +318,16 @@ function transmute() {
 
 function renderBook() {
   const entries = document.querySelector("#entries");
+
   if (!entries) return;
 
   entries.innerHTML = "";
 
   Object.entries(S.magic)
     .sort()
-    .forEach(([name,magic]) => {
+    .forEach(([name, magic]) => {
       const item = document.createElement("div");
+
       item.className = "entry";
 
       const origin =
@@ -309,13 +336,16 @@ function renderBook() {
           : "Primordial school";
 
       item.innerHTML = `
-        <span class="dot"
-        style="background:${magic.color};color:${magic.color}">
-        </span>
+        <span
+          class="dot"
+          style="background:${magic.color};color:${magic.color}"
+        ></span>
+
         <b>${name}</b>
+
         <small>
-        Origin: ${origin}<br>
-        Traits: ${magic.traits.join(", ")}
+          Origin: ${origin}<br>
+          Traits: ${magic.traits.join(", ")}
         </small>
       `;
 
@@ -325,31 +355,46 @@ function renderBook() {
 
 function renderTree() {
   const tree = document.querySelector("#treeWrap");
+
   if (!tree) return;
 
   tree.innerHTML = "";
 
   const magics = Object.entries(S.magic);
+
   const centerX = 380;
   const centerY = 250;
 
-  magics.forEach(([name,magic],index) => {
+  magics.forEach(([name, magic], index) => {
     const generated = magic.parents.length > 0;
 
     const angle =
       Math.PI * 2 * index / magics.length;
 
-    const radius = generated ? 210 : 115;
+    const radius =
+      generated ? 210 : 115;
 
-    const x = centerX + Math.cos(angle) * radius;
-    const y = centerY + Math.sin(angle) * radius;
+    const x =
+      centerX +
+      Math.cos(angle) * radius;
+
+    const y =
+      centerY +
+      Math.sin(angle) * radius;
 
     const node = document.createElement("div");
 
     node.className = "node";
-    node.style.left = x - 45 + "px";
-    node.style.top = y - 45 + "px";
-    node.style.background = magic.color;
+
+    node.style.left =
+      x - 45 + "px";
+
+    node.style.top =
+      y - 45 + "px";
+
+    node.style.background =
+      magic.color;
+
     node.textContent = name;
 
     tree.appendChild(node);
@@ -366,9 +411,10 @@ if (transmuteButton) {
   );
 }
 
-document.querySelectorAll("[data-open]")
+document
+  .querySelectorAll("[data-open]")
   .forEach(button => {
-    button.addEventListener("click",() => {
+    button.addEventListener("click", () => {
       if (S.dead) return;
 
       const modal =
@@ -386,10 +432,12 @@ document.querySelectorAll("[data-open]")
     });
   });
 
-document.querySelectorAll(".close")
+document
+  .querySelectorAll(".close")
   .forEach(button => {
-    button.addEventListener("click",() => {
-      const modal = button.closest(".modal");
+    button.addEventListener("click", () => {
+      const modal =
+        button.closest(".modal");
 
       if (modal) {
         modal.classList.remove("open");
@@ -398,46 +446,60 @@ document.querySelectorAll(".close")
   });
 
 /* =========================
-   JOYSTICK — v1.3 MULTITOUCH
+   JOYSTICK
+   TRUE MULTITOUCH
 ========================= */
 
-let joystick = {x:0,y:0};
+const joystick = {
+  x: 0,
+  y: 0
+};
 
-const stick = document.querySelector("#stick");
-const knob = document.querySelector("#knob");
+const stick =
+  document.querySelector("#stick");
 
-let pointerID = null;
+const knob =
+  document.querySelector("#knob");
+
+let joystickPointer = null;
 
 if (stick) {
   stick.style.touchAction = "none";
+  stick.style.userSelect = "none";
+  stick.style.webkitUserSelect = "none";
+  stick.style.webkitTouchCallout = "none";
 }
 
 function resetJoystick() {
-  pointerID = null;
+  joystickPointer = null;
+
   joystick.x = 0;
   joystick.y = 0;
 
   if (knob) {
     knob.style.transform =
-      "translate(0px,0px)";
+      "translate(0px, 0px)";
   }
 }
 
-function moveStick(event) {
-  if (S.dead || !stick || !knob) return;
+function updateJoystick(clientX, clientY) {
+  if (!stick || !knob) return;
 
-  const rect = stick.getBoundingClientRect();
+  const rect =
+    stick.getBoundingClientRect();
 
   let x =
-    event.clientX -
+    clientX -
     (rect.left + rect.width / 2);
 
   let y =
-    event.clientY -
+    clientY -
     (rect.top + rect.height / 2);
 
-  const distance = Math.hypot(x,y);
   const limit = 36;
+
+  const distance =
+    Math.hypot(x, y);
 
   if (distance > limit) {
     x *= limit / distance;
@@ -448,7 +510,7 @@ function moveStick(event) {
   joystick.y = y / limit;
 
   knob.style.transform =
-    `translate(${x}px,${y}px)`;
+    `translate(${x}px, ${y}px)`;
 }
 
 if (stick) {
@@ -457,15 +519,22 @@ if (stick) {
     event => {
       if (
         S.dead ||
-        pointerID !== null
-      ) return;
+        joystickPointer !== null
+      ) {
+        return;
+      }
 
-      pointerID = event.pointerId;
+      joystickPointer =
+        event.pointerId;
 
       event.preventDefault();
-      moveStick(event);
+
+      updateJoystick(
+        event.clientX,
+        event.clientY
+      );
     },
-    { passive:false }
+    { passive: false }
   );
 }
 
@@ -473,20 +542,29 @@ window.addEventListener(
   "pointermove",
   event => {
     if (
-      event.pointerId === pointerID &&
-      !S.dead
+      event.pointerId !==
+      joystickPointer
     ) {
-      event.preventDefault();
-      moveStick(event);
+      return;
     }
+
+    event.preventDefault();
+
+    updateJoystick(
+      event.clientX,
+      event.clientY
+    );
   },
-  { passive:false }
+  { passive: false }
 );
 
 window.addEventListener(
   "pointerup",
   event => {
-    if (event.pointerId === pointerID) {
+    if (
+      event.pointerId ===
+      joystickPointer
+    ) {
       resetJoystick();
     }
   }
@@ -495,7 +573,10 @@ window.addEventListener(
 window.addEventListener(
   "pointercancel",
   event => {
-    if (event.pointerId === pointerID) {
+    if (
+      event.pointerId ===
+      joystickPointer
+    ) {
       resetJoystick();
     }
   }
@@ -513,9 +594,15 @@ function burst(
   life = 25,
   speedBoost = 1
 ) {
-  for (let i = 0; i < amount; i++) {
+  for (
+    let i = 0;
+    i < amount;
+    i++
+  ) {
     const angle =
-      Math.random() * Math.PI * 2;
+      Math.random() *
+      Math.PI *
+      2;
 
     const speed =
       (Math.random() * 3 + 1) *
@@ -524,8 +611,15 @@ function burst(
     S.particles.push({
       x,
       y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
+
+      vx:
+        Math.cos(angle) *
+        speed,
+
+      vy:
+        Math.sin(angle) *
+        speed,
+
       life,
       maxLife: life,
       color
@@ -541,22 +635,29 @@ function spawnEnemy() {
   if (S.dead) return;
 
   const angle =
-    Math.random() * Math.PI * 2;
+    Math.random() *
+    Math.PI *
+    2;
 
   const distance =
-    380 + Math.random() * 180;
+    380 +
+    Math.random() *
+    180;
 
   S.enemies.push({
     x:
       S.x +
-      Math.cos(angle) * distance,
+      Math.cos(angle) *
+      distance,
 
     y:
       S.y +
-      Math.sin(angle) * distance,
+      Math.sin(angle) *
+      distance,
 
     hp: 40,
     maxHp: 40,
+
     r: 18,
 
     burn: 0,
@@ -570,17 +671,20 @@ function spawnEnemy() {
 ========================= */
 
 function heal(amount) {
-  if (S.dead) return;
+  if (S.dead) return 0;
 
   const before = S.hp;
 
-  S.hp = Math.min(
-    100,
-    S.hp + amount
-  );
+  S.hp =
+    Math.min(
+      100,
+      S.hp + amount
+    );
 
   const gained =
-    Math.round(S.hp - before);
+    Math.round(
+      S.hp - before
+    );
 
   if (gained > 0) {
     burst(
@@ -591,25 +695,32 @@ function heal(amount) {
       35,
       1
     );
-
-    notice("HEALED +" + gained);
-  } else {
-    notice("HP already full");
   }
+
+  return gained;
 }
 
 /* =========================
-   MAGIC POWER HELPERS
+   POWER HELPERS
 ========================= */
 
-function damageArea(radius,damage,color) {
-  for (const enemy of S.enemies) {
-    const d = Math.hypot(
-      enemy.x - S.x,
-      enemy.y - S.y
-    );
+function damageArea(
+  radius,
+  damage,
+  color
+) {
+  for (
+    const enemy of S.enemies
+  ) {
+    const distance =
+      Math.hypot(
+        enemy.x - S.x,
+        enemy.y - S.y
+      );
 
-    if (d <= radius) {
+    if (
+      distance <= radius
+    ) {
       enemy.hp -= damage;
 
       burst(
@@ -622,36 +733,64 @@ function damageArea(radius,damage,color) {
   }
 }
 
-function pushEnemies(radius,strength) {
-  for (const enemy of S.enemies) {
-    let dx = enemy.x - S.x;
-    let dy = enemy.y - S.y;
+function pushEnemies(
+  radius,
+  strength
+) {
+  for (
+    const enemy of S.enemies
+  ) {
+    let dx =
+      enemy.x - S.x;
 
-    const d = Math.hypot(dx,dy) || 1;
+    let dy =
+      enemy.y - S.y;
 
-    if (d <= radius) {
-      dx /= d;
-      dy /= d;
+    const distance =
+      Math.hypot(dx, dy) || 1;
 
-      enemy.x += dx * strength;
-      enemy.y += dy * strength;
+    if (
+      distance <= radius
+    ) {
+      dx /= distance;
+      dy /= distance;
+
+      enemy.x +=
+        dx * strength;
+
+      enemy.y +=
+        dy * strength;
     }
   }
 }
 
-function pullEnemies(radius,strength) {
-  for (const enemy of S.enemies) {
-    let dx = S.x - enemy.x;
-    let dy = S.y - enemy.y;
+function pullEnemies(
+  radius,
+  strength
+) {
+  for (
+    const enemy of S.enemies
+  ) {
+    let dx =
+      S.x - enemy.x;
 
-    const d = Math.hypot(dx,dy) || 1;
+    let dy =
+      S.y - enemy.y;
 
-    if (d <= radius) {
-      dx /= d;
-      dy /= d;
+    const distance =
+      Math.hypot(dx, dy) || 1;
 
-      enemy.x += dx * strength;
-      enemy.y += dy * strength;
+    if (
+      distance <= radius
+    ) {
+      dx /= distance;
+      dy /= distance;
+
+      enemy.x +=
+        dx * strength;
+
+      enemy.y +=
+        dy * strength;
     }
   }
 }
@@ -678,26 +817,27 @@ function createZone(
 }
 
 /* =========================
-   GENERATED POWERS
+   GENERATED MAGIC POWER
 ========================= */
 
 function generatedPower(magic) {
-  const t = magic.traits;
+  const traits =
+    magic.traits;
 
   let didSomething = false;
 
   if (
-    t.includes("heal") ||
-    t.includes("growth") ||
-    t.includes("purify")
+    traits.includes("heal") ||
+    traits.includes("growth") ||
+    traits.includes("purify")
   ) {
     heal(25);
     didSomething = true;
   }
 
   if (
-    t.includes("burn") ||
-    t.includes("heat")
+    traits.includes("burn") ||
+    traits.includes("heat")
   ) {
     damageArea(
       170,
@@ -705,11 +845,13 @@ function generatedPower(magic) {
       magic.color
     );
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 170
       ) {
         enemy.burn = 5;
@@ -720,30 +862,40 @@ function generatedPower(magic) {
   }
 
   if (
-    t.includes("push") ||
-    t.includes("impact")
+    traits.includes("push") ||
+    traits.includes("impact")
   ) {
-    pushEnemies(180,100);
+    pushEnemies(
+      180,
+      100
+    );
+
     didSomething = true;
   }
 
   if (
-    t.includes("control") ||
-    t.includes("mass")
+    traits.includes("control") ||
+    traits.includes("mass")
   ) {
-    pullEnemies(220,70);
+    pullEnemies(
+      220,
+      70
+    );
+
     didSomething = true;
   }
 
   if (
-    t.includes("freeze") ||
-    t.includes("cold")
+    traits.includes("freeze") ||
+    traits.includes("cold")
   ) {
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 190
       ) {
         enemy.slow = 5;
@@ -754,8 +906,8 @@ function generatedPower(magic) {
   }
 
   if (
-    t.includes("shock") ||
-    t.includes("energy")
+    traits.includes("shock") ||
+    traits.includes("energy")
   ) {
     damageArea(
       190,
@@ -767,8 +919,8 @@ function generatedPower(magic) {
   }
 
   if (
-    t.includes("drain") ||
-    t.includes("dark")
+    traits.includes("drain") ||
+    traits.includes("dark")
   ) {
     damageArea(
       150,
@@ -782,8 +934,8 @@ function generatedPower(magic) {
   }
 
   if (
-    t.includes("defense") ||
-    t.includes("solid")
+    traits.includes("defense") ||
+    traits.includes("solid")
   ) {
     S.ward =
       Math.max(
@@ -815,16 +967,20 @@ function generatedPower(magic) {
 }
 
 /* =========================
-   MAGIC POWERS
+   POWER
 ========================= */
 
 function usePower() {
   if (S.dead) return;
 
-  if (S.powerCooldown > 0) {
+  if (
+    S.powerCooldown > 0
+  ) {
     notice(
       "Power recharging: " +
-      Math.ceil(S.powerCooldown) +
+      Math.ceil(
+        S.powerCooldown
+      ) +
       "s"
     );
 
@@ -836,8 +992,11 @@ function usePower() {
     return;
   }
 
-  const name = S.selected;
-  const magic = S.magic[name];
+  const name =
+    S.selected;
+
+  const magic =
+    S.magic[name];
 
   S.mana -= 25;
   S.powerCooldown = 7;
@@ -849,11 +1008,13 @@ function usePower() {
       magic.color
     );
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 150
       ) {
         enemy.burn = 5;
@@ -861,26 +1022,40 @@ function usePower() {
     }
 
     burst(
-      S.x,S.y,
+      S.x,
+      S.y,
       magic.color,
-      50,35,1.5
+      50,
+      35,
+      1.5
     );
 
     notice("FLAME BURST");
   }
 
   else if (name === "Water") {
-    heal(30);
-    notice("RESTORING TIDE");
+    const gained = heal(30);
+
+    notice(
+      gained > 0
+        ? `RESTORING TIDE +${gained}`
+        : "RESTORING TIDE"
+    );
   }
 
   else if (name === "Wind") {
-    pushEnemies(190,130);
+    pushEnemies(
+      190,
+      130
+    );
 
     burst(
-      S.x,S.y,
+      S.x,
+      S.y,
       magic.color,
-      45,30,2
+      45,
+      30,
+      2
     );
 
     notice("GALE FORCE");
@@ -896,28 +1071,38 @@ function usePower() {
       );
 
     burst(
-      S.x,S.y,
+      S.x,
+      S.y,
       magic.color,
-      40,40,1
+      40,
+      40,
+      1
     );
 
     notice("STONE ARMOR");
   }
 
-  else if (name === "Lightning") {
+  else if (
+    name === "Lightning"
+  ) {
     const targets =
       [...S.enemies]
-      .sort((a,b) =>
-        Math.hypot(
-          a.x-S.x,
-          a.y-S.y
-        ) -
-        Math.hypot(
-          b.x-S.x,
-          b.y-S.y
-        )
-      )
-      .slice(0,4);
+        .sort((a, b) => {
+          const da =
+            Math.hypot(
+              a.x - S.x,
+              a.y - S.y
+            );
+
+          const db =
+            Math.hypot(
+              b.x - S.x,
+              b.y - S.y
+            );
+
+          return da - db;
+        })
+        .slice(0, 4);
 
     targets.forEach(enemy => {
       enemy.hp -= 18;
@@ -934,11 +1119,13 @@ function usePower() {
   }
 
   else if (name === "Ice") {
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 180
       ) {
         enemy.slow = 5;
@@ -955,7 +1142,8 @@ function usePower() {
   }
 
   else if (name === "Light") {
-    heal(45);
+    const gained =
+      heal(45);
 
     S.ward =
       Math.max(
@@ -963,17 +1151,23 @@ function usePower() {
         120
       );
 
-    notice("RADIANT RESTORATION");
+    notice(
+      gained > 0
+        ? `RADIANT RESTORATION +${gained}`
+        : "RADIANT RESTORATION"
+    );
   }
 
   else if (name === "Shadow") {
     let drained = 0;
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 160
       ) {
         enemy.hp -= 12;
@@ -1011,15 +1205,16 @@ function usePower() {
     );
 
     burst(
-      S.x,S.y,
+      S.x,
+      S.y,
       magic.color,
-      55,30,2
+      55,
+      30,
+      2
     );
 
     notice("FORCE REPULSE");
   }
-
-  /* SIGNATURE COMBINATIONS */
 
   else if (name === "Magma") {
     createZone(
@@ -1039,34 +1234,44 @@ function usePower() {
       magic.color
     );
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 200
       ) {
         enemy.burn = 7;
       }
     }
 
-    pullEnemies(200,45);
+    pullEnemies(
+      200,
+      45
+    );
 
     burst(
-      S.x,S.y,
+      S.x,
+      S.y,
       magic.color,
-      80,45,2
+      80,
+      45,
+      2
     );
 
     notice("INFERNO VORTEX");
   }
 
   else if (name === "Storm") {
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 240
       ) {
         enemy.wet = 6;
@@ -1075,9 +1280,12 @@ function usePower() {
     }
 
     burst(
-      S.x,S.y,
+      S.x,
+      S.y,
       magic.color,
-      70,35,2
+      70,
+      35,
+      2
     );
 
     notice("TEMPEST CHAIN");
@@ -1090,11 +1298,13 @@ function usePower() {
       magic.color
     );
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 220
       ) {
         enemy.slow = 8;
@@ -1112,22 +1322,29 @@ function usePower() {
     );
 
     burst(
-      S.x,S.y,
+      S.x,
+      S.y,
       magic.color,
-      100,40,2.5
+      100,
+      40,
+      2.5
     );
 
     notice("SOLAR ERUPTION");
   }
 
-  else if (name === "Blackflame") {
+  else if (
+    name === "Blackflame"
+  ) {
     let drained = 0;
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 190
       ) {
         enemy.hp -= 14;
@@ -1165,17 +1382,22 @@ function usePower() {
   else if (name === "Plasma") {
     const targets =
       [...S.enemies]
-      .sort((a,b) =>
-        Math.hypot(
-          a.x-S.x,
-          a.y-S.y
-        ) -
-        Math.hypot(
-          b.x-S.x,
-          b.y-S.y
-        )
-      )
-      .slice(0,5);
+        .sort((a, b) => {
+          const da =
+            Math.hypot(
+              a.x - S.x,
+              a.y - S.y
+            );
+
+          const db =
+            Math.hypot(
+              b.x - S.x,
+              b.y - S.y
+            );
+
+          return da - db;
+        })
+        .slice(0, 5);
 
     targets.forEach(enemy => {
       enemy.hp -= 26;
@@ -1199,11 +1421,13 @@ function usePower() {
       10
     );
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       if (
         Math.hypot(
-          enemy.x-S.x,
-          enemy.y-S.y
+          enemy.x - S.x,
+          enemy.y - S.y
         ) < 190
       ) {
         enemy.slow = 6;
@@ -1256,15 +1480,21 @@ function die() {
     S.magic[S.selected];
 
   burst(
-    S.x,S.y,
+    S.x,
+    S.y,
     magic.color,
-    85,55,2.2
+    85,
+    55,
+    2.2
   );
 
   burst(
-    S.x,S.y,
+    S.x,
+    S.y,
     "#ffffff",
-    40,45,1.5
+    40,
+    45,
+    1.5
   );
 }
 
@@ -1293,15 +1523,21 @@ function respawn() {
     S.magic[S.selected];
 
   burst(
-    S.x,S.y,
+    S.x,
+    S.y,
     magic.color,
-    70,45,1.7
+    70,
+    45,
+    1.7
   );
 
   burst(
-    S.x,S.y,
+    S.x,
+    S.y,
     "#ffffff",
-    25,35,1.1
+    25,
+    35,
+    1.1
   );
 
   notice("MAGIC REFORMED");
@@ -1324,14 +1560,19 @@ function castSpell() {
   let target = null;
   let closest = Infinity;
 
-  for (const enemy of S.enemies) {
-    const d = Math.hypot(
-      enemy.x-S.x,
-      enemy.y-S.y
-    );
+  for (
+    const enemy of S.enemies
+  ) {
+    const distance =
+      Math.hypot(
+        enemy.x - S.x,
+        enemy.y - S.y
+      );
 
-    if (d < closest) {
-      closest = d;
+    if (
+      distance < closest
+    ) {
+      closest = distance;
       target = enemy;
     }
   }
@@ -1340,8 +1581,8 @@ function castSpell() {
   let dy = joystick.y;
 
   if (target) {
-    dx = target.x-S.x;
-    dy = target.y-S.y;
+    dx = target.x - S.x;
+    dy = target.y - S.y;
   }
 
   if (
@@ -1353,26 +1594,26 @@ function castSpell() {
     dy = 0;
   }
 
-  const d =
-    Math.hypot(dx,dy) || 1;
+  const distance =
+    Math.hypot(dx, dy) || 1;
 
-  dx /= d;
-  dy /= d;
+  dx /= distance;
+  dy /= distance;
 
   const magic =
     S.magic[S.selected];
 
   S.shots.push({
-    x:S.x,
-    y:S.y,
+    x: S.x,
+    y: S.y,
 
-    vx:dx*9,
-    vy:dy*9,
+    vx: dx * 9,
+    vy: dy * 9,
 
-    life:65,
-    power:14,
+    life: 65,
+    power: 14,
 
-    color:magic.color
+    color: magic.color
   });
 
   burst(
@@ -1417,14 +1658,14 @@ function dodge() {
     dy = 0;
   }
 
-  const d =
-    Math.hypot(dx,dy) || 1;
+  const distance =
+    Math.hypot(dx, dy) || 1;
 
-  dx /= d;
-  dy /= d;
+  dx /= distance;
+  dy /= distance;
 
-  S.x += dx*90;
-  S.y += dy*90;
+  S.x += dx * 90;
+  S.y += dy * 90;
 
   burst(
     S.x,
@@ -1440,63 +1681,21 @@ function nextMagic() {
   const magics =
     Object.keys(S.magic);
 
+  if (!magics.length) return;
+
   let index =
     magics.indexOf(
       S.selected
     );
 
   index =
-    (index+1) %
+    (index + 1) %
     magics.length;
 
   S.selected =
     magics[index];
 
   updateHUD();
-}
-
-/* =========================
-   COMBAT BUTTONS
-========================= */
-
-const castButton =
-  document.querySelector("#cast");
-
-const wardButton =
-  document.querySelector("#ward");
-
-const dodgeButton =
-  document.querySelector("#dodge");
-
-const cycleButton =
-  document.querySelector("#cycle");
-
-if (castButton) {
-  castButton.addEventListener(
-    "click",
-    castSpell
-  );
-}
-
-if (wardButton) {
-  wardButton.addEventListener(
-    "click",
-    activateWard
-  );
-}
-
-if (dodgeButton) {
-  dodgeButton.addEventListener(
-    "click",
-    dodge
-  );
-}
-
-if (cycleButton) {
-  cycleButton.addEventListener(
-    "click",
-    nextMagic
-  );
 }
 
 /* =========================
@@ -1551,36 +1750,78 @@ if (!powerButton) {
   );
 }
 
-powerButton.addEventListener(
-  "click",
-  usePower
-);
-
 /* =========================
-   v1.3 MULTITOUCH BUTTONS
+   v1.3 TRUE MULTITOUCH
 ========================= */
 
-[
+function bindGameButton(
+  element,
+  action
+) {
+  if (!element) return;
+
+  element.style.touchAction =
+    "none";
+
+  element.style.userSelect =
+    "none";
+
+  element.style.webkitUserSelect =
+    "none";
+
+  element.style.webkitTouchCallout =
+    "none";
+
+  element.addEventListener(
+    "pointerdown",
+    event => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (S.dead) return;
+
+      action();
+    },
+    { passive: false }
+  );
+}
+
+const castButton =
+  document.querySelector("#cast");
+
+const wardButton =
+  document.querySelector("#ward");
+
+const dodgeButton =
+  document.querySelector("#dodge");
+
+const cycleButton =
+  document.querySelector("#cycle");
+
+bindGameButton(
   castButton,
+  castSpell
+);
+
+bindGameButton(
   wardButton,
+  activateWard
+);
+
+bindGameButton(
   dodgeButton,
+  dodge
+);
+
+bindGameButton(
   cycleButton,
-  powerButton
-].forEach(button => {
-  if (!button) return;
+  nextMagic
+);
 
-  button.style.touchAction =
-    "manipulation";
-
-  button.style.userSelect =
-    "none";
-
-  button.style.webkitUserSelect =
-    "none";
-
-  button.style.webkitTouchCallout =
-    "none";
-});
+bindGameButton(
+  powerButton,
+  usePower
+);
 
 /* =========================
    GAME UPDATE
@@ -1594,8 +1835,9 @@ let enemyTimer = 0;
 function update(time) {
   const delta =
     Math.min(
-      .033,
-      (time-previousTime)/1000
+      0.033,
+      (time - previousTime) /
+      1000
     );
 
   previousTime = time;
@@ -1632,7 +1874,7 @@ function update(time) {
       Math.min(
         100,
         S.mana +
-        8*delta
+        8 * delta
       );
 
     if (
@@ -1641,7 +1883,8 @@ function update(time) {
       S.powerCooldown =
         Math.max(
           0,
-          S.powerCooldown-delta
+          S.powerCooldown -
+          delta
         );
 
       powerButton.textContent =
@@ -1670,31 +1913,33 @@ function update(time) {
       enemyTimer = 0;
     }
 
-    /* ENEMY MOVEMENT */
+    /* ENEMIES */
 
-    for (const enemy of S.enemies) {
+    for (
+      const enemy of S.enemies
+    ) {
       const dx =
-        S.x-enemy.x;
+        S.x - enemy.x;
 
       const dy =
-        S.y-enemy.y;
+        S.y - enemy.y;
 
       const distance =
-        Math.hypot(dx,dy) || 1;
+        Math.hypot(dx, dy) || 1;
 
       const slowMultiplier =
         enemy.slow > 0
-          ? .35
+          ? 0.35
           : 1;
 
       enemy.x +=
-        (dx/distance) *
+        (dx / distance) *
         48 *
         slowMultiplier *
         delta;
 
       enemy.y +=
-        (dy/distance) *
+        (dy / distance) *
         48 *
         slowMultiplier *
         delta;
@@ -1709,7 +1954,7 @@ function update(time) {
 
       if (enemy.burn > 0) {
         enemy.burn -= delta;
-        enemy.hp -= 3*delta;
+        enemy.hp -= 3 * delta;
       }
 
       if (
@@ -1725,42 +1970,51 @@ function update(time) {
           Math.max(
             0,
             S.hp -
-            damage*delta
+            damage * delta
           );
       }
     }
 
     /* ZONES */
 
-    for (const zone of S.zones) {
+    for (
+      const zone of S.zones
+    ) {
       zone.life -= delta;
       zone.tick -= delta;
 
       if (
-        zone.type === "gravity"
+        zone.type ===
+        "gravity"
       ) {
         for (
           const enemy of S.enemies
         ) {
           const dx =
-            zone.x-enemy.x;
+            zone.x -
+            enemy.x;
 
           const dy =
-            zone.y-enemy.y;
+            zone.y -
+            enemy.y;
 
-          const d =
-            Math.hypot(dx,dy) || 1;
+          const distance =
+            Math.hypot(
+              dx,
+              dy
+            ) || 1;
 
           if (
-            d < zone.radius
+            distance <
+            zone.radius
           ) {
             enemy.x +=
-              (dx/d) *
+              (dx / distance) *
               45 *
               delta;
 
             enemy.y +=
-              (dy/d) *
+              (dy / distance) *
               45 *
               delta;
           }
@@ -1768,23 +2022,33 @@ function update(time) {
       }
 
       if (zone.tick <= 0) {
-        zone.tick = .5;
+        zone.tick = 0.5;
 
         if (
-          zone.type === "damage" ||
-          zone.type === "void"
+          zone.type ===
+            "damage" ||
+          zone.type ===
+            "void"
         ) {
           for (
             const enemy of S.enemies
           ) {
-            if (
+            const distance =
               Math.hypot(
-                enemy.x-zone.x,
-                enemy.y-zone.y
-              ) < zone.radius
+                enemy.x -
+                  zone.x,
+
+                enemy.y -
+                  zone.y
+              );
+
+            if (
+              distance <
+              zone.radius
             ) {
               enemy.hp -=
-                zone.type === "void"
+                zone.type ===
+                "void"
                   ? 7
                   : 6;
             }
@@ -1792,18 +2056,23 @@ function update(time) {
         }
 
         if (
-          zone.type === "heal"
+          zone.type ===
+          "heal"
         ) {
-          if (
+          const distance =
             Math.hypot(
-              S.x-zone.x,
-              S.y-zone.y
-            ) < zone.radius
+              S.x - zone.x,
+              S.y - zone.y
+            );
+
+          if (
+            distance <
+            zone.radius
           ) {
             S.hp =
               Math.min(
                 100,
-                S.hp+4
+                S.hp + 4
               );
           }
         }
@@ -1812,12 +2081,15 @@ function update(time) {
 
     S.zones =
       S.zones.filter(
-        zone => zone.life > 0
+        zone =>
+          zone.life > 0
       );
 
     /* SHOTS */
 
-    for (const shot of S.shots) {
+    for (
+      const shot of S.shots
+    ) {
       shot.x += shot.vx;
       shot.y += shot.vy;
 
@@ -1826,14 +2098,18 @@ function update(time) {
       for (
         const enemy of S.enemies
       ) {
-        const d =
+        const distance =
           Math.hypot(
-            shot.x-enemy.x,
-            shot.y-enemy.y
+            shot.x -
+              enemy.x,
+
+            shot.y -
+              enemy.y
           );
 
         if (
-          d < enemy.r+8
+          distance <
+          enemy.r + 8
         ) {
           enemy.hp -=
             shot.power;
@@ -1863,12 +2139,13 @@ function update(time) {
         defeated.length;
 
       S.xp +=
-        defeated.length*10;
+        defeated.length *
+        10;
 
       S.rank =
         1 +
         Math.floor(
-          S.xp/100
+          S.xp / 100
         );
 
       defeated.forEach(
@@ -1905,20 +2182,25 @@ function update(time) {
   /* PARTICLES */
 
   for (
-    const p of S.particles
+    const particle of
+      S.particles
   ) {
-    p.x += p.vx;
-    p.y += p.vy;
+    particle.x +=
+      particle.vx;
 
-    p.vx *= .96;
-    p.vy *= .96;
+    particle.y +=
+      particle.vy;
 
-    p.life--;
+    particle.vx *= 0.96;
+    particle.vy *= 0.96;
+
+    particle.life--;
   }
 
   S.particles =
     S.particles.filter(
-      p => p.life > 0
+      particle =>
+        particle.life > 0
     );
 
   drawWorld();
@@ -1930,24 +2212,27 @@ function update(time) {
 }
 
 /* =========================
-   DRAW WORLD
+   DRAW
 ========================= */
 
 function drawWorld() {
   ctx.clearRect(
-    0,0,vw,vh
+    0,
+    0,
+    vw,
+    vh
   );
 
   const background =
     ctx.createRadialGradient(
-      vw*.5,
-      vh*.45,
+      vw * 0.5,
+      vh * 0.45,
       20,
 
-      vw*.5,
-      vh*.45,
+      vw * 0.5,
+      vh * 0.45,
 
-      Math.max(vw,vh)
+      Math.max(vw, vh)
     );
 
   background.addColorStop(
@@ -1964,14 +2249,17 @@ function drawWorld() {
     background;
 
   ctx.fillRect(
-    0,0,vw,vh
+    0,
+    0,
+    vw,
+    vh
   );
 
   const offsetX =
-    vw/2-S.x;
+    vw / 2 - S.x;
 
   const offsetY =
-    vh/2-S.y;
+    vh / 2 - S.y;
 
   ctx.save();
 
@@ -1989,48 +2277,50 @@ function drawWorld() {
 
   const gridX =
     Math.floor(
-      (S.x-vw)/100
-    )*100;
+      (S.x - vw) /
+      100
+    ) * 100;
 
   const gridY =
     Math.floor(
-      (S.y-vh)/100
-    )*100;
+      (S.y - vh) /
+      100
+    ) * 100;
 
   for (
-    let x=gridX;
-    x<S.x+vw;
-    x+=100
+    let x = gridX;
+    x < S.x + vw;
+    x += 100
   ) {
     ctx.beginPath();
 
     ctx.moveTo(
       x,
-      S.y-vh
+      S.y - vh
     );
 
     ctx.lineTo(
       x,
-      S.y+vh
+      S.y + vh
     );
 
     ctx.stroke();
   }
 
   for (
-    let y=gridY;
-    y<S.y+vh;
-    y+=100
+    let y = gridY;
+    y < S.y + vh;
+    y += 100
   ) {
     ctx.beginPath();
 
     ctx.moveTo(
-      S.x-vw,
+      S.x - vw,
       y
     );
 
     ctx.lineTo(
-      S.x+vw,
+      S.x + vw,
       y
     );
 
@@ -2040,15 +2330,16 @@ function drawWorld() {
   /* TERRAIN */
 
   for (
-    let i=-4;
-    i<=4;
+    let i = -4;
+    i <= 4;
     i++
   ) {
     const x =
-      i*320;
+      i * 320;
 
     const y =
-      Math.sin(i*3)*250;
+      Math.sin(i * 3) *
+      250;
 
     ctx.fillStyle =
       "#182f2b";
@@ -2056,10 +2347,11 @@ function drawWorld() {
     ctx.beginPath();
 
     ctx.arc(
-      x,y,
+      x,
+      y,
       85,
       0,
-      Math.PI*2
+      Math.PI * 2
     );
 
     ctx.fill();
@@ -2070,8 +2362,8 @@ function drawWorld() {
     ctx.lineWidth = 2;
 
     ctx.strokeRect(
-      x-30,
-      y-18,
+      x - 30,
+      y - 18,
       60,
       36
     );
@@ -2083,10 +2375,11 @@ function drawWorld() {
     const zone of S.zones
   ) {
     ctx.globalAlpha =
-      .18 +
-      .18 *
+      0.18 +
+      0.18 *
       Math.sin(
-        performance.now()/120
+        performance.now() /
+        120
       );
 
     ctx.fillStyle =
@@ -2099,12 +2392,13 @@ function drawWorld() {
       zone.y,
       zone.radius,
       0,
-      Math.PI*2
+      Math.PI * 2
     );
 
     ctx.fill();
 
-    ctx.globalAlpha = .8;
+    ctx.globalAlpha =
+      0.8;
 
     ctx.strokeStyle =
       zone.color;
@@ -2123,12 +2417,16 @@ function drawWorld() {
     let enemyColor =
       "#bd334d";
 
-    if (enemy.slow > 0) {
+    if (
+      enemy.slow > 0
+    ) {
       enemyColor =
         "#8edfff";
     }
 
-    if (enemy.burn > 0) {
+    if (
+      enemy.burn > 0
+    ) {
       enemyColor =
         "#ff7038";
     }
@@ -2147,7 +2445,7 @@ function drawWorld() {
       enemy.y,
       enemy.r,
       0,
-      Math.PI*2
+      Math.PI * 2
     );
 
     ctx.fill();
@@ -2158,8 +2456,8 @@ function drawWorld() {
       "#310812";
 
     ctx.fillRect(
-      enemy.x-20,
-      enemy.y-29,
+      enemy.x - 20,
+      enemy.y - 29,
       40,
       4
     );
@@ -2168,8 +2466,8 @@ function drawWorld() {
       "#ff536c";
 
     ctx.fillRect(
-      enemy.x-20,
-      enemy.y-29,
+      enemy.x - 20,
+      enemy.y - 29,
 
       40 *
       Math.max(
@@ -2188,6 +2486,7 @@ function drawWorld() {
     const shot of S.shots
   ) {
     ctx.shadowBlur = 25;
+
     ctx.shadowColor =
       shot.color;
 
@@ -2201,7 +2500,7 @@ function drawWorld() {
       shot.y,
       8,
       0,
-      Math.PI*2
+      Math.PI * 2
     );
 
     ctx.fill();
@@ -2212,21 +2511,25 @@ function drawWorld() {
   /* PARTICLES */
 
   for (
-    const p of S.particles
+    const particle of
+      S.particles
   ) {
     ctx.globalAlpha =
       Math.max(
         0,
-        p.life /
-        (p.maxLife || 25)
+        particle.life /
+        (
+          particle.maxLife ||
+          25
+        )
       );
 
     ctx.fillStyle =
-      p.color;
+      particle.color;
 
     ctx.fillRect(
-      p.x-2,
-      p.y-2,
+      particle.x - 2,
+      particle.y - 2,
       4,
       4
     );
@@ -2243,6 +2546,7 @@ function drawWorld() {
       ].color;
 
     ctx.shadowBlur = 30;
+
     ctx.shadowColor =
       playerColor;
 
@@ -2256,7 +2560,7 @@ function drawWorld() {
       S.y,
       14,
       0,
-      Math.PI*2
+      Math.PI * 2
     );
 
     ctx.fill();
@@ -2265,6 +2569,7 @@ function drawWorld() {
       playerColor;
 
     ctx.lineWidth = 3;
+
     ctx.stroke();
 
     ctx.shadowBlur = 0;
@@ -2282,7 +2587,7 @@ function drawWorld() {
         S.y,
         30,
         0,
-        Math.PI*2
+        Math.PI * 2
       );
 
       ctx.stroke();
@@ -2298,7 +2603,10 @@ function drawWorld() {
       "rgba(5,4,12,.84)";
 
     ctx.fillRect(
-      0,0,vw,vh
+      0,
+      0,
+      vw,
+      vh
     );
 
     ctx.textAlign =
@@ -2317,8 +2625,8 @@ function drawWorld() {
 
     ctx.fillText(
       "YOU DIED",
-      vw/2,
-      vh/2-45
+      vw / 2,
+      vh / 2 - 45
     );
 
     ctx.shadowBlur = 0;
@@ -2331,15 +2639,15 @@ function drawWorld() {
 
     ctx.fillText(
       "Your magic awaits rebirth",
-      vw/2,
-      vh/2-5
+      vw / 2,
+      vh / 2 - 5
     );
 
     const bx =
-      vw/2-90;
+      vw / 2 - 90;
 
     const by =
-      vh/2+35;
+      vh / 2 + 35;
 
     ctx.shadowBlur = 20;
 
@@ -2366,8 +2674,8 @@ function drawWorld() {
 
     ctx.fillText(
       "RESPAWN",
-      vw/2,
-      by+36
+      vw / 2,
+      by + 36
     );
   }
 }
@@ -2376,12 +2684,18 @@ function drawWorld() {
    RESPAWN INPUT
 ========================= */
 
+C.style.touchAction = "none";
+
 C.addEventListener(
   "pointerdown",
   event => {
     if (
       !S.deathScreen
-    ) return;
+    ) {
+      return;
+    }
+
+    event.preventDefault();
 
     const rect =
       C.getBoundingClientRect();
@@ -2395,20 +2709,21 @@ C.addEventListener(
       rect.top;
 
     const bx =
-      vw/2-90;
+      vw / 2 - 90;
 
     const by =
-      vh/2+35;
+      vh / 2 + 35;
 
     if (
       x >= bx &&
-      x <= bx+180 &&
+      x <= bx + 180 &&
       y >= by &&
-      y <= by+56
+      y <= by + 56
     ) {
       respawn();
     }
-  }
+  },
+  { passive: false }
 );
 
 /* =========================
