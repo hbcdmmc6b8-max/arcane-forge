@@ -3207,6 +3207,13 @@ let enemyTimer = 0;
 let bossKillTarget = 20;
 
 function update(time) {
+if (typeof menuOpen !== "undefined" && menuOpen) {
+  previousTime = time;
+  drawWorld();
+  updateHUD();
+  requestAnimationFrame(update);
+  return;
+}
   const delta =
     Math.min(
       0.033,
@@ -3216,7 +3223,7 @@ function update(time) {
       ) /
       1000
     );
-
+    
   previousTime = time;
 
   if (
