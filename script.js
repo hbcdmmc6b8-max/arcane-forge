@@ -5239,6 +5239,10 @@ mainMenu.innerHTML = `
       PLAY
     </button>
 
+    <button id="menuMultiplayer" class="menuButton">
+      MULTIPLAYER
+    </button>
+
     <button id="menuForge" class="menuButton">
       FORGE
     </button>
