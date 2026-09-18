@@ -10,10 +10,13 @@ const SUPABASE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3dnN1bWlwdndmZWp2YWtuc3hsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3NDM3MzIsImV4cCI6MjEwNTMxOTczMn0.LwKfBcWu8WoN7aqW8QGbLRTa1wfNzzcSGVIekeZx4pA";
 
 const supabaseClient =
-  window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+  window.supabase &&
+  typeof window.supabase.createClient === "function"
+    ? window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      )
+    : null;
 
 let multiplayerChannel = null;
 let multiplayerRoom = null;
@@ -44,6 +47,11 @@ function connectMultiplayer(roomCode) {
     roomCode.trim().toUpperCase();
 
   if (!code) return;
+
+  if (!supabaseClient) {
+    notice("MULTIPLAYER REQUIRES INTERNET");
+    return;
+  }
 
   if (multiplayerChannel) {
     supabaseClient.removeChannel(
@@ -132,10 +140,10 @@ function sendPlayerState() {
 
     payload: {
       id: multiplayerId,
-      x: player.x,
-      y: player.y,
-      hp: player.hp,
-      magic: currentMagic
+      x: S.x,
+      y: S.y,
+      hp: S.hp,
+      magic: S.selected
     }
   });
 }
@@ -425,7 +433,7 @@ const recipes = {
   "Fire+Ice+Water":
     ["Thermal Rift","#aaadcf",["heat","cold","wet","energy","control"]],
 
-  "Lightning+Light+Shadow":
+  "Light+Lightning+Shadow":
     ["Eclipse Bolt","#d0b3ff",["radiant","dark","shock","energy","drain"]],
 
   "Earth+Light+Wind":
@@ -756,7 +764,7 @@ function awakeningName() {
     Supernova: "STAR DEATH",
     Singularity: "FINAL SINGULARITY",
     Phoenix: "PHOENIX ASCENSION",
-    Event_Horizon: "BLACK HORIZON"
+    "Event Horizon": "BLACK HORIZON"
   };
 
   return (
@@ -5628,7 +5636,6 @@ function closeMainMenu() {
    PLAY
 ========================================================= */
 
-document
 /* =========================================================
    MULTIPLAYER MENU
 ========================================================= */
@@ -5805,6 +5812,8 @@ document
       );
     }
   );
+
+document
   .getElementById("menuPlay")
   .addEventListener(
     "click",
