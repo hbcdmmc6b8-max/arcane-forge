@@ -368,7 +368,7 @@ document.querySelectorAll(".close")
   });
 
 /* =========================
-   JOYSTICK
+   JOYSTICK — v1.3 MULTITOUCH
 ========================= */
 
 let joystick = {x:0,y:0};
@@ -377,6 +377,8 @@ const stick = document.querySelector("#stick");
 const knob = document.querySelector("#knob");
 
 let pointerID = null;
+
+stick.style.touchAction = "none";
 
 function resetJoystick() {
   pointerID = null;
@@ -414,15 +416,23 @@ function moveStick(event) {
     `translate(${x}px,${y}px)`;
 }
 
-stick.addEventListener("pointerdown",event => {
-  if (S.dead) return;
+/*
+  IMPORTANT:
+  We DON'T capture the pointer anymore.
+
+  Finger 1 can stay on the joystick while
+  Finger 2 presses CAST / POWER / WARD /
+  DODGE / NEXT.
+*/
+
+stick.addEventListener("pointerdown", event => {
+  if (S.dead || pointerID !== null) return;
 
   pointerID = event.pointerId;
-  stick.setPointerCapture(pointerID);
   moveStick(event);
 });
 
-stick.addEventListener("pointermove",event => {
+window.addEventListener("pointermove", event => {
   if (
     event.pointerId === pointerID &&
     !S.dead
@@ -431,8 +441,18 @@ stick.addEventListener("pointermove",event => {
   }
 });
 
-stick.addEventListener("pointerup",resetJoystick);
-stick.addEventListener("pointercancel",resetJoystick);
+window.addEventListener("pointerup", event => {
+  if (event.pointerId === pointerID) {
+    resetJoystick();
+  }
+});
+
+window.addEventListener("pointercancel", event => {
+  if (event.pointerId === pointerID) {
+    resetJoystick();
+  }
+});
+
 
 /* =========================
    PARTICLES
