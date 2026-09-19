@@ -5572,13 +5572,8 @@ function drawWorld() {
       ctx.textAlign =
         "center";
 
-      ctx.fillText(
-        enemy.type,
-        enemy.x,
-        enemy.y -
-          enemy.r -
-          20
-      );
+      /* The fixed boss HUD already shows the boss name. Drawing it
+         above the world sprite overlaps the mobile action buttons. */
     }
   }
 
@@ -7506,7 +7501,7 @@ function v18OwnerLabPage(page){
 function v18OwnerRoomInspector(){v18Body.replaceChildren();const p=document.createElement("p");p.textContent=multiplayerRoom?"Current room: "+multiplayerRoom+" • Other players recently seen: "+multiplayerPlayers.size:"Not connected to a multiplayer room.";v18Body.append(p);v18Body.append(v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));}
 function v18OwnerChatSettings(){v18Body.replaceChildren();const p=document.createElement("p");p.textContent="Local chat display controls. These do not mute or ban other players on the server.";v18Body.append(p);
   const top=v18OwnerField(v18Body,"Chat top position (% of screen, 8–65)","number",Number(localStorage.getItem("afChatTopPct")||22),8,65);
-  v18Body.append(v18OwnerButton("SAVE CHAT POSITION",()=>{const n=Math.max(8,Math.min(65,Number(top.value)||22));localStorage.setItem("afChatTopPct",String(n));if(typeof v18ChatUI!=="undefined")v18ChatUI.style.top=n+"vh";notice("CHAT POSITION SAVED");}));
+  v18Body.append(v18OwnerButton("SAVE CHAT POSITION",()=>{const n=Math.max(8,Math.min(65,Number(top.value)||22));localStorage.setItem("afChatTopPct",String(n));if(typeof v18ChatUI!=="undefined")v18ChatUI.style.top=n+"vh";afLayoutSafeZones();notice("CHAT POSITION SAVED");}));
   v18Body.append(v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));
 }
 function v18OwnerAuditView(){v18Body.replaceChildren();const p=document.createElement("p");p.textContent="This-device owner actions only; not a server moderation audit log.";v18Body.append(p);const log=document.createElement("pre");log.style.cssText="white-space:pre-wrap;font-size:12px";log.textContent=v18OwnerAudit.join("\n")||"No local actions yet.";v18Body.append(log);v18Body.append(v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));}
@@ -7711,6 +7706,59 @@ renderForge();
 renderBook();
 renderTree();
 updateHUD();
+
+/* =========================================================
+   BUILD 8 — MOBILE HUD SAFE ZONES
+   Keeps persistent controls in separate screen areas. No gameplay
+   state, multiplayer synchronization, or owner permissions changed.
+========================================================= */
+function afLayoutSafeZones(){
+  const narrow = innerWidth < 700;
+  const topInset = Math.max(0, window.visualViewport ? window.visualViewport.offsetTop : 0);
+  if(narrow){
+    /* The title/HP/mana occupy the top strip; avoid that entire row. */
+    afPauseButton.style.left="12px";
+    afPauseButton.style.right="auto";
+    afPauseButton.style.top="calc(env(safe-area-inset-top, 0px) + 188px)";
+    afPauseButton.style.padding="9px 11px";
+    afPauseButton.style.fontSize="11px";
+    afPauseButton.style.maxWidth="110px";
+    v18TestHud.style.left="auto";
+    v18TestHud.style.right="12px";
+    v18TestHud.style.top="calc(env(safe-area-inset-top, 0px) + 188px)";
+    v18TestHud.style.transform="none";
+    v18TestHud.style.maxWidth="min(185px, 48vw)";
+    v18TestHud.style.fontSize="10px";
+    v18TestHud.style.padding="10px 8px";
+    v18TestHud.style.whiteSpace="normal";
+    v18TestHud.style.lineHeight="1.2";
+    bossHud.style.top="calc(env(safe-area-inset-top, 0px) + 260px)";
+    bossHud.style.width="min(520px, calc(100vw - 36px))";
+    /* Damage messages stay below the boss HUD, not on its HP bar. */
+    damageIndicator.style.top="calc(env(safe-area-inset-top, 0px) + 370px)";
+    damageIndicator.style.maxWidth="calc(100vw - 44px)";
+    /* Chat uses the upper-right area, never the movement/action pads. */
+    v18ChatUI.style.maxHeight="min(30dvh, 240px)";
+    v18ChatUI.style.width="min(280px, calc(100vw - 24px))";
+    const chatTop=Math.max(310,Math.min(innerHeight*.45,Number(localStorage.getItem("afChatTopPct")||22)*innerHeight/100));
+    v18ChatUI.style.top=chatTop+"px";
+  }else{
+    afPauseButton.style.left="12px";afPauseButton.style.right="auto";
+    afPauseButton.style.top="calc(env(safe-area-inset-top, 0px) + 12px)";
+    afPauseButton.style.maxWidth="";afPauseButton.style.fontSize="12px";
+    v18TestHud.style.left="50%";v18TestHud.style.right="auto";
+    v18TestHud.style.top="calc(env(safe-area-inset-top, 0px) + 12px)";
+    v18TestHud.style.transform="translateX(-50%)";
+    v18TestHud.style.maxWidth="";v18TestHud.style.fontSize="";
+    bossHud.style.top="155px";bossHud.style.width="min(520px, 72vw)";
+    damageIndicator.style.top="32%";
+    v18ChatUI.style.top=(Number(localStorage.getItem("afChatTopPct")||22))+"vh";
+    v18ChatUI.style.maxHeight="35vh";v18ChatUI.style.width="min(320px,calc(100vw - 20px))";
+  }
+}
+addEventListener("resize",afLayoutSafeZones);
+if(window.visualViewport)window.visualViewport.addEventListener("resize",afLayoutSafeZones);
+afLayoutSafeZones();
 
 v18HandleRecoveryLink();
 
