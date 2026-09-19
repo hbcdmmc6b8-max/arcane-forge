@@ -48,6 +48,7 @@ function makeRoomCode() {
 }
 
 function connectMultiplayer(roomCode) {
+  if(typeof v18Testing!=="undefined" && !v18Testing.active){v18Testing.invincible=false;v18Testing.infiniteMana=false;}
   const code =
     roomCode.trim().toUpperCase();
 
@@ -3766,8 +3767,8 @@ if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "u
     }
   }
 
-  if (v18Testing.active && v18Testing.invincible) S.hp = Math.max(1,S.hp);
-  if (v18Testing.active && v18Testing.infiniteMana) S.mana = 100;
+  if ((v18Testing.active || afOwnerLocalAllowed()) && v18Testing.invincible) S.hp = Math.max(1,S.hp);
+  if ((v18Testing.active || afOwnerLocalAllowed()) && v18Testing.infiniteMana) S.mana = 100;
   if (
     S.hp <= 0 &&
     !S.dead
@@ -7329,13 +7330,15 @@ function v18ShowAccount(){
       status.textContent=error?error.message:"If this account exists, check your email for a NEW reset link.";
     }catch(_){status.textContent="Could not request reset email. Try again.";}
   });
-  document.getElementById("v18AuthSignout").addEventListener("click",async()=>{if(supabaseClient)await supabaseClient.auth.signOut();v18Account=null;v18ChatName="Guest-"+multiplayerId.slice(0,5);status.textContent="Playing as guest";});
+  document.getElementById("v18AuthSignout").addEventListener("click",async()=>{if(supabaseClient)await supabaseClient.auth.signOut();v18Account=null;afOwnerVerified=false;v18ChatName="Guest-"+multiplayerId.slice(0,5);status.textContent="Playing as guest";});
 }
 /* BUILD 5: TWO-PART OWNER COMMAND CENTER.
    Every entry shown here performs an existing action; future privileges are
    deliberately not presented as working buttons. Owner status is verified
    against the database whenever the panel is opened. */
 let v18OwnerPage="creation";
+let afOwnerVerified=false;
+function afOwnerLocalAllowed(){return afOwnerVerified && !multiplayerRoom && !multiplayerChannel;}
 function v18OwnerButton(label,action){
   const button=document.createElement("button");
   button.className="menuButton";button.style.width="100%";
@@ -7343,6 +7346,7 @@ function v18OwnerButton(label,action){
   return button;
 }
 async function v18ShowAdmin(){
+  afOwnerVerified=false;
   v18Body.replaceChildren();
   const status=document.createElement("p");
   status.textContent="Verifying owner permission…";v18Body.append(status);
@@ -7355,6 +7359,7 @@ async function v18ShowAdmin(){
   if(check.error||check.data!==true){
     status.textContent="Owner access unavailable for this account.";return;
   }
+  afOwnerVerified=true;
   status.textContent="VERIFIED OWNER • Choose a section";
   const nav=document.createElement("div");
   nav.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0";
@@ -7389,8 +7394,12 @@ async function v18ShowAdmin(){
       entries.push({label:"LAB WORLD DIRECTOR",node:v18OwnerButton("WORLD DIRECTOR • PRIVATE",()=>v18OwnerLabPage("world"))});
       entries.push({label:"LAB ENEMY DIRECTOR",node:v18OwnerButton("ENEMY DIRECTOR • PRIVATE",()=>v18OwnerLabPage("enemies"))});
       entries.push({label:"LAB PRESET VAULT",node:v18OwnerButton("PRESET VAULT • PRIVATE",()=>v18OwnerLabPage("presets"))});
+      entries.push({label:"COMBAT DIRECTOR",node:v18OwnerButton("COMBAT DIRECTOR • LOCAL",()=>afOwnerExtras("combat"))});
+      entries.push({label:"BOSS DIRECTOR",node:v18OwnerButton("BOSS DIRECTOR • LOCAL",()=>afOwnerExtras("boss"))});
+      entries.push({label:"MAGIC WORKSHOP",node:v18OwnerButton("MAGIC WORKSHOP • LOCAL",()=>afOwnerExtras("magic"))});
+      entries.push({label:"ARENA TOOLS",node:v18OwnerButton("ARENA TOOLS • LOCAL",()=>afOwnerExtras("arena"))});
       const info=document.createElement("p");info.style.cssText="font-size:12px;color:#aeb8d8;line-height:1.5";
-      info.textContent="The private lab includes invincibility, infinite mana, enemy and boss spawning, adjustable HP, and arena clearing. Spell laboratory, world director, enemy director and preset vault are available inside the private lab. These do not change shared multiplayer worlds.";
+      info.textContent="Combat Director, Boss Director, Magic Workshop and Arena Tools work in single-player or the private Testing Room. In single-player, changes affect your current run and normal progress may be saved. The other lab pages remain Testing Room only. These controls cannot be used while connected to multiplayer.";
       entries.push({label:"LAB DETAILS",node:info});
     }else{
       const info=document.createElement("p");info.style.cssText="font-size:12px;color:#aeb8d8;line-height:1.5";
@@ -7505,7 +7514,72 @@ function v18OwnerChatSettings(){v18Body.replaceChildren();const p=document.creat
   v18Body.append(v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));
 }
 function v18OwnerAuditView(){v18Body.replaceChildren();const p=document.createElement("p");p.textContent="This-device owner actions only; not a server moderation audit log.";v18Body.append(p);const log=document.createElement("pre");log.style.cssText="white-space:pre-wrap;font-size:12px";log.textContent=v18OwnerAudit.join("\n")||"No local actions yet.";v18Body.append(log);v18Body.append(v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));}
-const v18Testing={active:false,invincible:true,infiniteMana:true,snapshot:null};
+/* BUILD 10 — Owner-verified local single-player and private-lab tools.
+   Owner status is verified when opening the Owner Panel; these pages never send room broadcasts.
+   Single-player changes affect the current run; private lab changes are discarded on exit. */
+function afOwnerExtras(page){
+  if(!afOwnerLocalAllowed()){v18Body.textContent="Owner verification required. Disconnect from multiplayer and reopen the Owner Panel.";return;}
+  v18Body.replaceChildren();
+  const h=document.createElement("h3");h.textContent=({combat:"COMBAT DIRECTOR",boss:"BOSS DIRECTOR",magic:"MAGIC WORKSHOP",arena:"ARENA TOOLS"})[page]+" • LOCAL";v18Body.append(h);
+  const note=document.createElement("p");note.textContent=v18Testing.active?"Private Testing Room • Changes and rewards discarded on exit.":"Single-player • Changes affect this run; normal progression may be saved. No multiplayer changes.";v18Body.append(note);
+  const btn=(label,fn)=>v18Body.append(v18OwnerButton(label,()=>{if(!afOwnerLocalAllowed()){notice("OWNER LOCAL MODE REQUIRED");return;}fn();v18OwnerLog(label+(v18Testing.active?" (private lab)":" (single player)"));}));
+  const field=(label,value,min,max)=>v18OwnerField(v18Body,label,"number",value,min,max);
+  const clamp=(el,min,max,fallback)=>{const n=Number(el.value);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback;};
+  const select=(values)=>{const el=document.createElement("select");el.style.cssText="display:block;width:100%;padding:10px;margin:10px 0;background:#182139;color:white;border-radius:8px";values.forEach(([label,value])=>el.add(new Option(label,value)));v18Body.append(el);return el;};
+  const clear=()=>{S.enemies.length=0;S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;S.particles.length=0;};
+  if(page==="combat"){
+    const target=select([["All enemies","all"],["Normal enemies","normal"],["Bosses","boss"]]);
+    const amount=field("Amount / multiplier",100,0,100000);
+    const chosen=()=>S.enemies.filter(e=>target.value==="all"||(target.value==="boss"?!!e.boss:!e.boss));
+    btn("SET TARGET HP",()=>{const hp=Math.max(1,clamp(amount,1,100000,100));chosen().forEach(e=>{e.hp=hp;e.maxHp=hp;});notice("TARGET HP SET");});
+    btn("HEAL TARGETS TO FULL",()=>{chosen().forEach(e=>e.hp=e.maxHp);notice("TARGETS HEALED");});
+    btn("SET TARGET SPEED MULTIPLIER",()=>{const m=clamp(amount,0,10,1);chosen().forEach(e=>{if(e.afBaseSpeed===undefined)e.afBaseSpeed=e.speed;e.speed=e.afBaseSpeed*m;});notice("TARGET SPEED UPDATED");});
+    btn("SET TARGET DAMAGE MULTIPLIER",()=>{const m=clamp(amount,0,10,1);chosen().forEach(e=>{if(e.afBaseDamage===undefined)e.afBaseDamage=e.damage;e.damage=e.afBaseDamage*m;});notice("TARGET DAMAGE UPDATED");});
+    btn("FREEZE TARGETS",()=>{chosen().forEach(e=>{if(e.afBaseSpeed===undefined)e.afBaseSpeed=e.speed;e.speed=0;});notice("TARGETS FROZEN");});
+    btn("UNFREEZE TARGETS",()=>{chosen().forEach(e=>{if(e.afBaseSpeed!==undefined)e.speed=e.afBaseSpeed;});notice("TARGETS UNFROZEN");});
+    btn("CLEAR TARGETS",()=>{const remove=new Set(chosen());for(let i=S.enemies.length-1;i>=0;i--)if(remove.has(S.enemies[i]))S.enemies.splice(i,1);notice("TARGETS CLEARED");});
+    btn("RESTORE PLAYER HP & MANA",()=>{S.hp=100;S.mana=100;S.dead=false;S.deathScreen=false;deathOverlay.style.display="none";updateHUD();});
+    btn("RESET AWAKENING",()=>{S.awakening=0;S.awakened=false;S.awakeningTime=0;notice("AWAKENING RESET");});
+    btn("FILL AWAKENING",()=>{S.awakening=100;notice("AWAKENING READY");});
+  }else if(page==="boss"){
+    const roster=select(bossRoster.map((b,i)=>[b.name,String(i)]));
+    const hp=field("Boss HP",3000,1,1000000);
+    const distance=field("Spawn distance",440,120,1200);
+    btn("SPAWN SELECTED BOSS",()=>{if(S.enemies.some(e=>e.boss)){notice("CLEAR CURRENT BOSS FIRST");return;}const old=bossesSpawned;bossesSpawned=Number(roster.value);spawnMiniBoss();bossesSpawned=old;const b=S.enemies.find(e=>e.boss);if(b){b.hp=b.maxHp=clamp(hp,1,1000000,3000);b.x=S.x+clamp(distance,120,1200,440);b.y=S.y;}notice("LAB BOSS SPAWNED");});
+    btn("SET CURRENT BOSS HP",()=>{const b=S.enemies.find(e=>e.boss);if(!b){notice("NO BOSS");return;}b.hp=b.maxHp=clamp(hp,1,1000000,3000);updateBossHUD();});
+    btn("HEAL CURRENT BOSS",()=>{const b=S.enemies.find(e=>e.boss);if(b)b.hp=b.maxHp;else notice("NO BOSS");});
+    btn("MOVE BOSS TO SPAWN DISTANCE",()=>{const b=S.enemies.find(e=>e.boss);if(!b){notice("NO BOSS");return;}b.x=S.x+clamp(distance,120,1200,440);b.y=S.y;});
+    btn("REMOVE CURRENT BOSS",()=>{for(let i=S.enemies.length-1;i>=0;i--)if(S.enemies[i].boss)S.enemies.splice(i,1);S.enemyShots.length=0;updateBossHUD();});
+    btn("CLEAR BOSS PROJECTILES",()=>{S.enemyShots.length=0;S.zones.length=0;notice("BOSS PROJECTILES CLEARED");});
+    btn("RESET BOSS ROTATION",()=>{bossesSpawned=0;notice("BOSS ROTATION RESET");});
+  }else if(page==="magic"){
+    const magic=select(Object.keys(S.magic).sort().map(name=>[name,name]));magic.value=S.selected;
+    const count=field("Particle count",45,1,250);
+    const radius=field("Preview distance",90,0,400);
+    btn("EQUIP SELECTED MAGIC",()=>{S.selected=magic.value;updateHUD();notice("LAB MAGIC EQUIPPED");});
+    btn("PREVIEW MAGIC BURST",()=>{const m=S.magic[magic.value];if(m)burst(S.x,S.y,m.color,clamp(count,1,250,45),35,2);});
+    btn("PREVIEW MAGIC IMPACT",()=>{const m=S.magic[magic.value];if(m)impactVfx(S.x+clamp(radius,0,400,90),S.y,m.color,magic.value,true);});
+    btn("PREVIEW ELEMENTAL DASH",()=>{const m=S.magic[magic.value];if(m)for(let i=0;i<6;i++)burst(S.x+i*16,S.y,m.color,Math.min(20,clamp(count,1,250,45)),18,1.3);});
+    btn("FILL MANA",()=>{S.mana=100;updateHUD();});
+    btn("EMPTY MANA",()=>{S.mana=0;updateHUD();});
+    btn("CHARGE AWAKENING",()=>{S.awakening=100;notice("AWAKENING READY");});
+    btn("CLEAR SPELL EFFECTS",()=>{S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;S.particles.length=0;});
+  }else if(page==="arena"){
+    const x=field("Move player X (relative)",0,-1000,1000);
+    const y=field("Move player Y (relative)",0,-1000,1000);
+    btn("MOVE PLAYER BY OFFSET",()=>{S.x+=clamp(x,-1000,1000,0);S.y+=clamp(y,-1000,1000,0);notice("PLAYER MOVED");});
+    btn("RESET PLAYER POSITION",()=>{S.x=0;S.y=0;resetJoystick();notice("POSITION RESET");});
+    btn("CLEAR ENEMIES",()=>{S.enemies.length=0;updateBossHUD();});
+    btn("CLEAR ALL PROJECTILES",()=>{S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;});
+    btn("CLEAR PARTICLES",()=>{S.particles.length=0;});
+    btn("CLEAR ENTIRE ARENA",()=>{clear();updateBossHUD();notice("LAB ARENA CLEARED");});
+    btn("RESET PLAYER COMBAT STATE",()=>{S.hp=100;S.mana=100;S.ward=0;S.armor=0;S.awakening=0;S.awakened=false;S.awakeningTime=0;S.dead=false;S.deathScreen=false;deathOverlay.style.display="none";updateHUD();});
+    btn("TOGGLE INVINCIBILITY",()=>{v18Testing.invincible=!v18Testing.invincible;notice("INVINCIBILITY "+(v18Testing.invincible?"ON":"OFF"));});
+    btn("TOGGLE INFINITE MANA",()=>{v18Testing.infiniteMana=!v18Testing.infiniteMana;notice("INFINITE MANA "+(v18Testing.infiniteMana?"ON":"OFF"));});
+  }
+  btn("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL"));
+}
+const v18Testing={active:false,invincible:false,infiniteMana:false,snapshot:null};
 const v18TestHud=document.createElement("button");
 v18TestHud.textContent="TEST LAB • CONTROLS";
 v18TestHud.style.cssText="position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:90;display:none;background:#24164a;color:#fff;border:1px solid #c5aaff;border-radius:12px;padding:10px;font-weight:800";
@@ -7531,7 +7605,7 @@ function v18ExitTesting(){
   bossesSpawned=b.bossesSpawned;bossKillTarget=b.bossKillTarget;enemyTimer=b.enemyTimer;
   S.enemies.length=0;S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;S.particles.length=0;
   S.dead=false;S.deathScreen=false;S.deathTimer=0;deathOverlay.style.display="none";
-  v18Testing.active=false;v18Testing.snapshot=null;v18TestHud.style.display="none";v18Panel.style.display="none";
+  v18Testing.active=false;v18Testing.invincible=false;v18Testing.infiniteMana=false;v18Testing.snapshot=null;v18TestHud.style.display="none";v18Panel.style.display="none";
   renderForge();renderBook();renderTree();updateHUD();openMainMenu();notice("TEST LAB CLOSED — NORMAL SAVE RESTORED");
 }
 function v18ShowTestingControls(){
