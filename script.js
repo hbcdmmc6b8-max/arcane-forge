@@ -104,9 +104,13 @@ function connectMultiplayer(roomCode) {
           return;
         }
 
+        const oldPlayer = multiplayerPlayers.get(payload.id);
         multiplayerPlayers.set(
           payload.id,
           {
+            renderX: oldPlayer ? oldPlayer.renderX : x,
+            renderY: oldPlayer ? oldPlayer.renderY : y,
+            renderFacing: oldPlayer ? oldPlayer.renderFacing : Number(payload.facing) || 0,
             id: payload.id,
             x,
             y,
@@ -777,6 +781,10 @@ function damagePlayer(
     showDamageIndicator(
       lost
     );
+    if (performance.now() - (damagePlayer.lastSound || 0) > 450) {
+      damagePlayer.lastSound = performance.now();
+      playSfx("damage");
+    }
   }
 
   return lost;
@@ -928,7 +936,7 @@ function updateBossHUD() {
     "block";
 
   bossHudName.textContent =
-    boss.type;
+    boss.type + (boss.phase === 2 ? " — PHASE II" : "");
 
   bossHudFill.style.width =
     Math.max(
@@ -1074,9 +1082,10 @@ function awaken() {
 
   S.awakening = 0;
   S.awakened = true;
-  S.awakeningTime = 10;
+  S.awakeningTime = 7;
 
-  S.mana = 100;
+  S.mana = Math.min(100,S.mana + 50);
+  playSfx("awaken",S.selected);
 
   const magic =
     S.magic[S.selected];
@@ -1654,6 +1663,59 @@ function burst(
 }
 
 /* =========================
+   V1.7 AUDIO AND IMPACT VFX
+========================= */
+let audioContext = null;
+let soundEnabled = localStorage.arcaneForgeSound !== "off";
+let lastImpactSound = 0;
+function playSfx(kind = "cast", element = "Fire") {
+  if (!soundEnabled) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!audioContext) audioContext = new AC();
+    if (audioContext.state === "suspended") audioContext.resume();
+    const now = audioContext.currentTime;
+    const osc = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const tones = {Fire:190,Water:320,Wind:410,Earth:115,Lightning:660,
+      Ice:570,Light:780,Shadow:95,Force:260};
+    const baseTone = tones[element] || 300;
+    const duration = kind === "boss" ? .65 : kind === "awaken" ? .45 : .10;
+    osc.type = element === "Lightning" ? "sawtooth" :
+      element === "Shadow" ? "triangle" : "sine";
+    const pitch = kind === "damage" ? 95 : kind === "boss" ? 75 :
+      kind === "impact" ? baseTone * .7 : baseTone;
+    osc.frequency.setValueAtTime(pitch, now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(35,pitch*.55),now+duration);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.exponentialRampToValueAtTime(kind === "boss" ? .11 : .045,now+.012);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+    osc.connect(gain); gain.connect(audioContext.destination);
+    osc.start(now); osc.stop(now+duration+.01);
+  } catch (_) {}
+}
+const soundToggle = document.createElement("button");
+soundToggle.textContent = soundEnabled ? "SFX ON" : "SFX OFF";
+Object.assign(soundToggle.style, {position:"fixed",left:"12px",bottom:"170px",
+  zIndex:"62",fontSize:"11px",padding:"7px",borderRadius:"9px",
+  background:"#151a30",color:"white",border:"1px solid #59617f"});
+soundToggle.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  localStorage.arcaneForgeSound = soundEnabled ? "on" : "off";
+  soundToggle.textContent = soundEnabled ? "SFX ON" : "SFX OFF";
+  if (soundEnabled) playSfx("cast");
+});
+document.body.appendChild(soundToggle);
+function impactVfx(x,y,color,element="Fire",large=false) {
+  const amount = large ? 32 : 9;
+  burst(x,y,color,amount,large ? 38 : 18,large ? 2 : 1);
+  if (element === "Ice" || element === "Earth" || element === "Lightning") {
+    burst(x,y,"#ffffff",large ? 12 : 4,14,1.7);
+  }
+  if (element === "Shadow") burst(x,y,"#31203e",large ? 15 : 5,25,1.2);
+}
+/* =========================
    ENEMY TYPES
 ========================= */
 
@@ -1932,70 +1994,33 @@ function spawnEnemy() {
    MINI BOSS
 ========================= */
 
+const bossRoster = [
+  {name:"ARCANE SENTINEL",hp:3000,r:48,speed:28,damage:26,color:"#e09cff",style:"sentinel",ranged:true,dash:true,shield:true},
+  {name:"FROST WYRM",hp:4500,r:54,speed:40,damage:19,color:"#a9e9ff",style:"wyrm",ranged:true,dash:true},
+  {name:"INFERNO GOLEM",hp:6000,r:58,speed:23,damage:30,color:"#ff6334",style:"golem",ranged:true,shield:true},
+  {name:"ABYSS REAPER",hp:8000,r:46,speed:55,damage:23,color:"#9d6cff",style:"reaper",ranged:true,dash:true},
+  {name:"CELESTIAL TITAN",hp:10000,r:64,speed:32,damage:32,color:"#fff0a6",style:"titan",ranged:true,shield:true}
+];
+let bossesSpawned = 0;
 function spawnMiniBoss() {
-  if (
-    S.dead ||
-    S.enemies.some(
-      enemy => enemy.boss
-    )
-  ) {
-    return;
-  }
-
-  const angle =
-    Math.random() *
-    Math.PI *
-    2;
-
-  const distance = 520;
-
-  S.enemies.push({
-    type: "ARCANE SENTINEL",
-
-    boss: true,
-
-    x:
-      S.x +
-      Math.cos(angle) *
-      distance,
-
-    y:
-      S.y +
-      Math.sin(angle) *
-      distance,
-
-    hp: 3000,
-    maxHp: 3000,
-
-    r: 48,
-
-    speed: 28,
-    damage: 26,
-
-    color: "#e09cff",
-
-    xp: 450,
-    essence: 25,
-
-    ranged: true,
-    dash: true,
-    shieldType: true,
-
-    elite: false,
-
-    burn: 0,
-    slow: 0,
-    wet: 0,
-
-    shield: 80,
-
-    attackTimer: 1,
-    dashTimer: 4
-  });
-
-  notice(
-    "MINI-BOSS — ARCANE SENTINEL"
-  );
+  if (S.dead || S.enemies.some(enemy => enemy.boss)) return;
+  const config = bossRoster[Math.min(bossesSpawned,bossRoster.length-1)];
+  bossesSpawned++;
+  const angle = Math.random()*Math.PI*2;
+  const boss = {
+    type:config.name,boss:true,bossStyle:config.style,
+    x:S.x+Math.cos(angle)*440,y:S.y+Math.sin(angle)*440,
+    hp:config.hp,maxHp:config.hp,r:config.r,
+    speed:config.speed,damage:config.damage,color:config.color,
+    xp:Math.round(config.hp/7),essence:Math.round(config.hp/120),
+    ranged:!!config.ranged,dash:!!config.dash,shieldType:!!config.shield,
+    elite:false,burn:0,slow:0,wet:0,shield:config.shield?80:0,
+    attackTimer:1.5,dashTimer:4,phase:1,phasePulse:0
+  };
+  S.enemies.push(boss);
+  playSfx("boss");
+  impactVfx(boss.x,boss.y,boss.color,"Light",true);
+  notice("BOSS — " + boss.type);
 }
 
 /* =========================
@@ -2092,7 +2117,7 @@ function damageArea(
       hurtEnemy(
         enemy,
         damage *
-        (S.awakened ? 1.65 : 1),
+        (S.awakened ? 1.25 : 1),
         color
       );
     }
@@ -3259,7 +3284,7 @@ function castSpell() {
 
   const cost =
     S.awakened
-      ? 5
+      ? 7
       : 10;
 
   if (
@@ -3322,13 +3347,15 @@ function castSpell() {
   dx /= distance;
   dy /= distance;
   facePlayer(dx, dy, true);
+  playSfx("cast",S.selected);
+  impactVfx(S.x,S.y,S.magic[S.selected].color,S.selected);
 
   const magic =
     S.magic[S.selected];
 
   const count =
     S.awakened
-      ? 3
+      ? 2
       : 1;
 
   for (
@@ -3374,7 +3401,7 @@ function castSpell() {
 
       power:
         S.awakened
-          ? 22
+          ? 18
           : 14,
 
       color:
@@ -3467,6 +3494,8 @@ function dodge() {
     );
 
   addAwakening(1);
+  playSfx("dodge",S.selected);
+  impactVfx(S.x,S.y,S.magic[S.selected].color,S.selected);
 
   burst(
     S.x,
@@ -3736,7 +3765,7 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
 
     const moveSpeed =
       S.awakened
-        ? 230
+        ? 205
         : 180;
 
     S.x +=
@@ -3789,7 +3818,7 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
       S.awakened
         ? (
             S.awakeningTime /
-            10 *
+            7 *
             100
           ) + "%"
         : S.awakening + "%";
@@ -3864,7 +3893,8 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
 
     if (
       S.kills >=
-      bossKillTarget
+      bossKillTarget &&
+      !S.enemies.some(enemy => enemy.boss)
     ) {
       spawnMiniBoss();
 
@@ -3892,6 +3922,16 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
         enemy.slow > 0
           ? 0.35
           : 1;
+
+      if (enemy.boss && enemy.phase === 1 && enemy.hp <= enemy.maxHp*.5) {
+        enemy.phase = 2;
+        enemy.speed *= 1.18;
+        enemy.phasePulse = 1;
+        impactVfx(enemy.x,enemy.y,enemy.color,"Light",true);
+        playSfx("boss");
+        notice(enemy.type + " — PHASE TWO");
+      }
+      if (enemy.phasePulse > 0) enemy.phasePulse = Math.max(0,enemy.phasePulse-delta);
 
       /* WARDEN SHIELD */
 
@@ -3965,10 +4005,19 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
         ) {
           enemyShoot(enemy);
 
-          enemy.attackTimer =
-            enemy.boss
-              ? 1.1
-              : 2.2;
+          if (enemy.boss && enemy.phase === 2) {
+            const shots = enemy.bossStyle === "titan" ? 7 : 4;
+            const velocity = enemy.bossStyle === "wyrm" ? 5.5 : 4;
+            for (let i=0;i<shots;i++) {
+              const a = Math.atan2(S.y-enemy.y,S.x-enemy.x)+(i-(shots-1)/2)*.20;
+              S.enemyShots.push({x:enemy.x,y:enemy.y,
+                vx:Math.cos(a)*velocity,vy:Math.sin(a)*velocity,
+                life:110,damage:enemy.bossStyle === "titan" ? 14 : 11,
+                color:enemy.color,r:7});
+            }
+            impactVfx(enemy.x,enemy.y,enemy.color,"Lightning");
+          }
+          enemy.attackTimer = enemy.boss ? (enemy.phase === 2 ? 1.25 : 1.8) : 2.2;
         }
       }
 
@@ -4324,6 +4373,11 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
             shot.power,
             shot.color
           );
+          impactVfx(shot.x,shot.y,shot.color,shot.magicName);
+          if (performance.now()-lastImpactSound>100) {
+            lastImpactSound=performance.now();
+            playSfx("impact",shot.magicName);
+          }
 
           shot.life = 0;
 
@@ -4381,11 +4435,11 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
             : 1
         );
 
-        if (
-          enemy.boss
-        ) {
+        if (enemy.boss) {
+          playSfx("boss");
+          impactVfx(enemy.x,enemy.y,enemy.color,"Light",true);
           notice(
-            "ARCANE SENTINEL DEFEATED"
+            enemy.type + " DEFEATED"
           );
         }
       }
@@ -4943,6 +4997,61 @@ function playerElement(magicName) {
     tertiary: unique[2] || null, color: magic.color };
 }
 
+function drawBossBody(enemy,color) {
+  if (enemy.bossStyle === "sentinel") {
+    drawArcaneSentinel(enemy,color);
+    return;
+  }
+  const t = performance.now()*.001;
+  const r = enemy.r;
+  ctx.save(); ctx.translate(enemy.x,enemy.y);
+  ctx.shadowBlur=28;ctx.shadowColor=color;
+  ctx.strokeStyle=color;ctx.lineWidth=3;
+  const phase = enemy.phase===2 ? 1.22 : 1;
+  ctx.scale(phase,phase);
+  function poly(points,fill,stroke=true) {
+    ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));
+    ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke)ctx.stroke();
+  }
+  if (enemy.bossStyle === "wyrm") {
+    for(let i=5;i>=0;i--) {
+      const x=-i*12,y=Math.sin(t*3-i*.65)*12;
+      poly([[x-13,y],[x,y-12],[x+14,y],[x,y+12]],i%2?"#24465f":"#3d7792");
+    }
+    poly([[-15,-17],[12,-31],[35,-14],[43,0],[24,20],[-15,17]],"#b7f4ff");
+    poly([[7,-22],[3,-49],[20,-30]],"#e5ffff");
+    poly([[24,-17],[35,-40],[35,-8]],"#e5ffff");
+    poly([[25,3],[39,8],[21,12]],"#17354a",false);
+  } else if(enemy.bossStyle === "golem") {
+    poly([[-32,-32],[27,-36],[39,14],[18,38],[-25,35],[-40,7]],"#59352c");
+    poly([[-40,-28],[-63,-17],[-59,18],[-38,27],[-28,2]],"#805345");
+    poly([[37,-29],[62,-17],[60,18],[39,27],[28,2]],"#805345");
+    poly([[-20,-48],[22,-48],[26,-25],[-23,-22]],"#302c32");
+    poly([[-14,-6],[0,-21],[16,-3],[0,18]],"#ffb05b");
+  } else if(enemy.bossStyle === "reaper") {
+    poly([[0,-45],[-28,-17],[-36,34],[0,51],[36,34],[28,-17]],"#170d29");
+    poly([[0,-48],[-23,-22],[0,-7],[23,-22]],"#48336a");
+    poly([[-14,-19],[14,-19],[0,-10]],"#b49aff");
+    ctx.beginPath();ctx.moveTo(27,22);ctx.lineTo(51,-42);ctx.lineTo(56,-35);
+    ctx.strokeStyle="#c3b2e8";ctx.lineWidth=4;ctx.stroke();
+    poly([[51,-42],[20,-58],[40,-68],[68,-56]],"#d7c8ff");
+  } else {
+    poly([[-35,-42],[35,-42],[44,20],[0,55],[-44,20]],"#45475d");
+    poly([[-45,-36],[-69,-24],[-57,14],[-33,1]],"#a5a7c4");
+    poly([[45,-36],[69,-24],[57,14],[33,1]],"#a5a7c4");
+    poly([[-21,-59],[21,-59],[26,-29],[0,-20],[-26,-29]],"#d7d7ee");
+    poly([[0,-20],[14,0],[0,23],[-14,0]],"#fff7a8");
+    ctx.beginPath();ctx.ellipse(0,-73,35,9,0,0,Math.PI*2);
+    ctx.strokeStyle="#fff0a6";ctx.lineWidth=5;ctx.stroke();
+  }
+  if (enemy.phase===2) {
+    ctx.globalAlpha=.6+.3*Math.sin(t*8);
+    ctx.strokeStyle=color;ctx.lineWidth=2;
+    ctx.strokeRect(-r*.7,-r*.7,r*1.4,r*1.4);
+  }
+  ctx.restore();
+}
+
 function drawPlayerElement(x, y, magicName, awakened = false, facing = -Math.PI / 2) {
   const element = playerElement(magicName);
   const r = awakened ? 17 : 14;
@@ -5320,10 +5429,7 @@ function drawWorld() {
     if (
       enemy.boss
     ) {
-      drawArcaneSentinel(
-        enemy,
-        enemyColor
-      );
+      drawBossBody(enemy,enemyColor);
     }
 
     else {
@@ -5436,7 +5542,7 @@ function drawWorld() {
         "center";
 
       ctx.fillText(
-        "ARCANE SENTINEL",
+        enemy.type,
         enemy.x,
         enemy.y -
           enemy.r -
@@ -5527,27 +5633,35 @@ function drawWorld() {
         ? remoteMagic.color
         : "#8fd3ff";
 
+    const smoothing = 0.17;
+    player.renderX += (player.x - player.renderX) * smoothing;
+    player.renderY += (player.y - player.renderY) * smoothing;
+    const angleDiff = Math.atan2(
+      Math.sin(player.facing - player.renderFacing),
+      Math.cos(player.facing - player.renderFacing)
+    );
+    player.renderFacing += angleDiff * smoothing;
     drawPlayerElement(
-      player.x,
-      player.y,
+      player.renderX,
+      player.renderY,
       player.magic || "Fire",
       false,
-      player.facing
+      player.renderFacing
     );
 
     ctx.fillStyle =
       "rgba(20,8,18,.9)";
     ctx.fillRect(
-      player.x - 22,
-      player.y - 31,
+      player.renderX - 22,
+      player.renderY - 31,
       44,
       5
     );
 
     ctx.fillStyle = playerColor;
     ctx.fillRect(
-      player.x - 22,
-      player.y - 31,
+      player.renderX - 22,
+      player.renderY - 31,
       44 *
         Math.max(0, player.hp) /
         100,
