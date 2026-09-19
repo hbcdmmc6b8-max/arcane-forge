@@ -1668,6 +1668,24 @@ function burst(
 let audioContext = null;
 let soundEnabled = localStorage.arcaneForgeSound !== "off";
 let lastImpactSound = 0;
+const gameSettings = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem("arcaneForgeSettingsV18") || "{}");
+    return {
+      sfxVolume: Number.isFinite(saved.sfxVolume) ? Math.max(0, Math.min(1, saved.sfxVolume)) : .238,
+      musicVolume: Number.isFinite(saved.musicVolume) ? Math.max(0, Math.min(1, saved.musicVolume)) : .18,
+      vfx: saved.vfx !== false,
+      screenShake: saved.screenShake !== false,
+      showOtherPlayers: saved.showOtherPlayers !== false
+    };
+  } catch (_) {
+    return {sfxVolume:.238,musicVolume:.18,vfx:true,screenShake:true,showOtherPlayers:true};
+  }
+})();
+function saveGameSettings() {
+  try { localStorage.setItem("arcaneForgeSettingsV18",JSON.stringify(gameSettings)); } catch (_) {}
+}
+
 function playSfx(kind = "cast", element = "Fire") {
   if (!soundEnabled) return;
   try {
@@ -1689,7 +1707,7 @@ function playSfx(kind = "cast", element = "Fire") {
     osc.frequency.setValueAtTime(pitch, now);
     osc.frequency.exponentialRampToValueAtTime(Math.max(35,pitch*.55),now+duration);
     gain.gain.setValueAtTime(.0001,now);
-    gain.gain.exponentialRampToValueAtTime(kind === "boss" ? .44 : .198,now+.012);
+    gain.gain.exponentialRampToValueAtTime((kind === "boss" ? .44 : .238) * gameSettings.sfxVolume / .238,now+.012);
     gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
     osc.connect(gain); gain.connect(audioContext.destination);
     osc.start(now); osc.stop(now+duration+.01);
@@ -1706,7 +1724,8 @@ soundToggle.addEventListener("click", () => {
   soundToggle.textContent = soundEnabled ? "SFX ON" : "SFX OFF";
   if (soundEnabled) playSfx("cast");
 });
-document.body.appendChild(soundToggle);
+/* SFX is controlled from the V1.8 main-menu Settings panel. */
+soundToggle.style.display = "none";
 function impactVfx(x,y,color,element="Fire",large=false) {
   const amount = large ? 32 : 9;
   burst(x,y,color,amount,large ? 38 : 18,large ? 2 : 1);
@@ -6335,12 +6354,12 @@ mainMenu.innerHTML = `
       FORGE
     </button>
 
-    <button id="menuSettings" class="menuButton">
-      SETTINGS
-    </button>
+    <button id="menuCustomization" class="menuButton">CUSTOMIZATION</button>
+    <button id="menuRankRewards" class="menuButton">RANK REWARDS</button>
+    <button id="menuSettings" class="menuButton">SETTINGS</button>
 
     <div class="menuVersion">
-      v1.4 • MOBILE + DESKTOP
+      v1.8 • MENU PREVIEW
     </div>
 
   </div>
@@ -6380,7 +6399,8 @@ mainMenuStyle.textContent = `
   transition:
     opacity .45s ease;
 
-  overflow: hidden;
+  overflow-y: auto;
+  touch-action: pan-y;
 }
 
 
@@ -6660,9 +6680,10 @@ mainMenuStyle.textContent = `
     width: 88vw;
 
     padding:
-      30px
       22px
-      22px;
+      22px
+      18px;
+    margin: 20px 0;
   }
 
   .menuButton {
@@ -7004,31 +7025,99 @@ if (forgeModal) {
 
 
 /* =========================================================
-   SETTINGS
+   V1.8 MAIN-MENU PANELS — FIRST BUILD
+   Local-only settings and cosmetic preview. No account rewards
+   or background music are claimed until those systems exist.
 ========================================================= */
-
-document
-  .getElementById(
-    "menuSettings"
-  )
-  .addEventListener(
-    "click",
-    () => {
-
-      /*
-        Settings screen comes next.
-
-        For now this confirms
-        the button works.
-      */
-
-      notice(
-        "SETTINGS — COMING NEXT"
-      );
-
-    }
-  );
-
+const v18Panel = document.createElement("div");
+v18Panel.id = "v18Panel";
+v18Panel.setAttribute("role", "dialog");
+v18Panel.setAttribute("aria-modal", "true");
+v18Panel.style.cssText = "position:fixed;inset:0;z-index:1100;display:none;align-items:center;justify-content:center;background:rgba(3,5,13,.94);padding:18px;touch-action:pan-y";
+v18Panel.innerHTML = `<section style="width:min(440px,100%);max-height:88dvh;overflow:auto;padding:22px;border:1px solid #7765b1;border-radius:22px;background:#101426;color:#f4f5ff;font-family:system-ui;box-shadow:0 20px 65px #000">
+  <button id="v18Back" class="menuButton" style="width:auto;float:right;padding:9px 15px">BACK</button>
+  <h2 id="v18Title" style="margin:6px 0 18px">SETTINGS</h2>
+  <div id="v18Body"></div>
+</section>`;
+document.body.appendChild(v18Panel);
+const v18Body = document.getElementById("v18Body");
+const v18Title = document.getElementById("v18Title");
+function v18Open(title) {
+  v18Title.textContent = title;
+  v18Panel.style.display = "flex";
+  if (title === "SETTINGS") v18Settings();
+  if (title === "CUSTOMIZATION") v18Customization();
+  if (title === "RANK REWARDS") v18Rewards();
+}
+document.getElementById("v18Back").addEventListener("click", () => {
+  v18Panel.style.display = "none";
+});
+function v18Settings() {
+  v18Body.innerHTML = `
+    <label style="display:block;margin:15px 0">SFX <strong id="v18SfxValue"></strong><input id="v18Sfx" type="range" min="0" max="1" step="0.001" style="display:block;width:100%;margin-top:9px;touch-action:pan-x"></label>
+    <label style="display:block;margin:15px 0">MUSIC <strong id="v18MusicValue"></strong><input id="v18Music" type="range" min="0" max="1" step="0.01" style="display:block;width:100%;margin-top:9px;touch-action:pan-x"></label>
+    <p style="font-size:12px;color:#adb5d5">Background music will be connected in a later V1.8 build.</p>
+    <label style="display:block;margin:14px 0"><input id="v18SoundOn" type="checkbox"> Sound effects enabled</label>
+    <label style="display:block;margin:14px 0"><input id="v18Vfx" type="checkbox"> Extra visual effects (coming in a later build)</label>
+    <label style="display:block;margin:14px 0"><input id="v18Shake" type="checkbox"> Screen shake (coming in a later build)</label>
+    <label style="display:block;margin:14px 0"><input id="v18Others" type="checkbox"> Show other players (coming in a later build)</label>
+    <button id="v18Mute" class="menuButton" style="width:100%">MUTE SFX</button>`;
+  const sfx = document.getElementById("v18Sfx");
+  sfx.value = gameSettings.sfxVolume;
+  const sfxLabel = document.getElementById("v18SfxValue");
+  const refreshSfx = () => { sfxLabel.textContent = Number(sfx.value).toFixed(3); };
+  refreshSfx();
+  sfx.addEventListener("input", () => { gameSettings.sfxVolume = Number(sfx.value); refreshSfx(); saveGameSettings(); });
+  const music = document.getElementById("v18Music");
+  music.value = gameSettings.musicVolume;
+  const musicLabel = document.getElementById("v18MusicValue");
+  const refreshMusic = () => { musicLabel.textContent = Math.round(Number(music.value)*100)+"%"; };
+  refreshMusic();
+  music.addEventListener("input", () => { gameSettings.musicVolume = Number(music.value); refreshMusic(); saveGameSettings(); });
+  const enabled = document.getElementById("v18SoundOn");
+  enabled.checked = soundEnabled;
+  enabled.addEventListener("change", () => {
+    soundEnabled = enabled.checked;
+    localStorage.arcaneForgeSound = soundEnabled ? "on" : "off";
+    soundToggle.textContent = soundEnabled ? "SFX ON" : "SFX OFF";
+    if (soundEnabled) playSfx("cast");
+  });
+  document.getElementById("v18Mute").addEventListener("click", () => { enabled.checked = false; enabled.dispatchEvent(new Event("change")); });
+  for (const [id,key] of [["v18Vfx","vfx"],["v18Shake","screenShake"],["v18Others","showOtherPlayers"]]) {
+    const input = document.getElementById(id);
+    input.checked = gameSettings[key];
+    input.addEventListener("change", () => { gameSettings[key] = input.checked; saveGameSettings(); });
+  }
+}
+const v18CosmeticKey = "arcaneForgeCosmeticsV18";
+let v18Cosmetics = {title:"None",aura:"None"};
+try { v18Cosmetics = {...v18Cosmetics,...JSON.parse(localStorage.getItem(v18CosmeticKey)||"{}")}; } catch (_) {}
+function v18Customization() {
+  v18Body.innerHTML = `<p style="color:#adb5d5">Equip cosmetics here, away from combat controls. Rank and boss rewards will be added in later builds.</p>
+    <label style="display:block;margin:18px 0">TITLE <select id="v18TitleSelect" style="display:block;width:100%;padding:12px;background:#222944;color:white;border-radius:10px"><option>None</option></select></label>
+    <label style="display:block;margin:18px 0">AURA <select id="v18AuraSelect" style="display:block;width:100%;padding:12px;background:#222944;color:white;border-radius:10px"><option>None</option></select></label>
+    <p id="v18Equipped" style="color:#b9a8ff"></p>`;
+  const title = document.getElementById("v18TitleSelect");
+  const aura = document.getElementById("v18AuraSelect");
+  title.value = "None"; aura.value = "None";
+  const display = () => { document.getElementById("v18Equipped").textContent = `Equipped: ${v18Cosmetics.title} / ${v18Cosmetics.aura}`; };
+  display();
+  for (const [el,key] of [[title,"title"],[aura,"aura"]]) el.addEventListener("change", () => {
+    v18Cosmetics[key] = el.value;
+    try { localStorage.setItem(v18CosmeticKey,JSON.stringify(v18Cosmetics)); } catch (_) {}
+    display();
+  });
+}
+function v18Rewards() {
+  v18Body.innerHTML = "";
+  const info = document.createElement("p");
+  info.textContent = `Current rank: ${S.rank}. Rank-based title and aura rewards will arrive in a later V1.8 build.`;
+  info.style.color = "#cbd1ed";
+  v18Body.appendChild(info);
+}
+document.getElementById("menuSettings").addEventListener("click", () => v18Open("SETTINGS"));
+document.getElementById("menuCustomization").addEventListener("click", () => v18Open("CUSTOMIZATION"));
+document.getElementById("menuRankRewards").addEventListener("click", () => v18Open("RANK REWARDS"));
 
 /* =========================================================
    PAUSE GAME WHILE MENU IS OPEN
