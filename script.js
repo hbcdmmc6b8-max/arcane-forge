@@ -117,6 +117,8 @@ function connectMultiplayer(roomCode) {
               typeof payload.magic === "string"
                 ? payload.magic
                 : "Fire",
+            facing: Number.isFinite(Number(payload.facing))
+              ? Number(payload.facing) : -Math.PI / 2,
             lastSeen: performance.now()
           }
         );
@@ -172,7 +174,8 @@ function sendPlayerState() {
       x: S.x,
       y: S.y,
       hp: S.hp,
-      magic: S.selected
+      magic: S.selected,
+      facing: playerFacing
     }
   }).catch(() => {});
 }
@@ -1443,6 +1446,17 @@ const joystick = {
   x: 0,
   y: 0
 };
+
+/* Character faces movement, or the latest cast direction while aiming. */
+let playerFacing = -Math.PI / 2;
+let playerAimUntil = 0;
+
+function facePlayer(dx, dy, aiming = false) {
+  if (Math.hypot(dx, dy) < 0.1) return;
+  playerFacing = Math.atan2(dy, dx) + Math.PI / 2;
+  if (aiming) playerAimUntil = performance.now() + 450;
+}
+
 
 const stick =
   document.querySelector("#stick");
@@ -3307,6 +3321,7 @@ function castSpell() {
 
   dx /= distance;
   dy /= distance;
+  facePlayer(dx, dy, true);
 
   const magic =
     S.magic[S.selected];
@@ -3733,6 +3748,10 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
       joystick.y *
       moveSpeed *
       delta;
+
+    if (performance.now() >= playerAimUntil) {
+      facePlayer(joystick.x, joystick.y);
+    }
 
     /* MANA */
 
@@ -4924,13 +4943,14 @@ function playerElement(magicName) {
     tertiary: unique[2] || null, color: magic.color };
 }
 
-function drawPlayerElement(x, y, magicName, awakened = false) {
+function drawPlayerElement(x, y, magicName, awakened = false, facing = -Math.PI / 2) {
   const element = playerElement(magicName);
   const r = awakened ? 17 : 14;
   const t = performance.now() * .001;
   const c = element.color;
   ctx.save();
   ctx.translate(x, y);
+  ctx.rotate(facing);
   ctx.shadowBlur = awakened ? 50 : 30;
   ctx.shadowColor = c;
   ctx.fillStyle = c;
@@ -5510,7 +5530,9 @@ function drawWorld() {
     drawPlayerElement(
       player.x,
       player.y,
-      player.magic || "Fire"
+      player.magic || "Fire",
+      false,
+      player.facing
     );
 
     ctx.fillStyle =
@@ -5605,7 +5627,8 @@ function drawWorld() {
       S.x,
       S.y,
       S.selected,
-      S.awakened
+      S.awakened,
+      playerFacing
     );
 
     if (
@@ -6006,6 +6029,7 @@ if (desktopMode) {
 
     dx /= distance;
     dy /= distance;
+    facePlayer(dx, dy, true);
 
     const magic =
       S.magic[
