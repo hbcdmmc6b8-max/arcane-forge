@@ -548,6 +548,7 @@ try {
 } catch (e) {}
 
 function saveGame() {
+  if (typeof v18Testing !== "undefined" && v18Testing.active) return;
   try {
     localStorage.arcaneForge =
       JSON.stringify({
@@ -3715,6 +3716,7 @@ let enemyTimer = 0;
 let bossKillTarget = 20;
 
 function update(time) {
+  if (typeof v18MusicTick === "function") v18MusicTick();
 if (typeof menuOpen !== "undefined" && menuOpen) {
   previousTime = time;
   drawWorld();
@@ -3760,6 +3762,8 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
     }
   }
 
+  if (v18Testing.active && v18Testing.invincible) S.hp = Math.max(1,S.hp);
+  if (v18Testing.active && v18Testing.infiniteMana) S.mana = 100;
   if (
     S.hp <= 0 &&
     !S.dead
@@ -3884,7 +3888,7 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
 
     /* SPAWNING */
 
-    enemyTimer += delta;
+    if (!v18Testing.active) enemyTimer += delta;
 
     const maxEnemies =
       Math.min(
@@ -3916,7 +3920,7 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
 
     if (
       S.kills >=
-      bossKillTarget &&
+      !v18Testing.active && bossKillTarget &&
       !S.enemies.some(enemy => enemy.boss)
     ) {
       spawnMiniBoss();
@@ -6943,6 +6947,7 @@ document
     () => {
 
       closeMainMenu();
+      v18MusicStart();
 
       notice(
         "ENTERING THE ARCANE WORLD"
@@ -7063,6 +7068,7 @@ function v18Open(title) {
   if (title === "ROOM CHAT") v18ShowChat(true);
   if (title === "ACCOUNT") v18ShowAccount();
   if (title === "OWNER PANEL") v18ShowAdmin();
+  if (title === "OWNER TESTING ROOM") v18ShowTestingControls();
   if (title === "RESET PASSWORD") v18ShowResetPassword();
 }
 document.getElementById("v18Back").addEventListener("click", () => {
@@ -7073,7 +7079,7 @@ function v18Settings() {
   v18Body.innerHTML = `
     <label style="display:block;margin:15px 0">SFX <strong id="v18SfxValue"></strong><input id="v18Sfx" type="range" min="0" max="1" step="0.001" style="display:block;width:100%;margin-top:9px;touch-action:pan-x"></label>
     <label style="display:block;margin:15px 0">MUSIC <strong id="v18MusicValue"></strong><input id="v18Music" type="range" min="0" max="1" step="0.01" style="display:block;width:100%;margin-top:9px;touch-action:pan-x"></label>
-    <p style="font-size:12px;color:#adb5d5">Background music will be connected in a later V1.8 build.</p>
+    <p style="font-size:12px;color:#adb5d5">Original synthesized exploration and boss loops. Music starts after you tap PLAY or enable it here.</p><button id="v18MusicStart" class="menuButton" style="width:100%">START MUSIC</button>
     <label style="display:block;margin:14px 0"><input id="v18SoundOn" type="checkbox"> Sound effects enabled</label>
     <label style="display:block;margin:14px 0"><input id="v18Vfx" type="checkbox"> Extra visual effects (coming in a later build)</label>
     <label style="display:block;margin:14px 0"><input id="v18Shake" type="checkbox"> Screen shake (coming in a later build)</label>
@@ -7090,7 +7096,8 @@ function v18Settings() {
   const musicLabel = document.getElementById("v18MusicValue");
   const refreshMusic = () => { musicLabel.textContent = Math.round(Number(music.value)*100)+"%"; };
   refreshMusic();
-  music.addEventListener("input", () => { gameSettings.musicVolume = Number(music.value); refreshMusic(); saveGameSettings(); });
+  music.addEventListener("input", () => { gameSettings.musicVolume = Number(music.value); refreshMusic(); saveGameSettings(); v18MusicStart(); });
+  document.getElementById("v18MusicStart").addEventListener("click",v18MusicStart);
   const enabled = document.getElementById("v18SoundOn");
   enabled.checked = soundEnabled;
   enabled.addEventListener("change", () => {
@@ -7203,7 +7210,7 @@ let v18ChatName="Guest-"+multiplayerId.slice(0,5);
 let v18ChatHidden=false;
 const v18ChatUI=document.createElement("aside");
 v18ChatUI.id="v18ChatUI";
-v18ChatUI.style.cssText="position:fixed;right:10px;bottom:84px;width:min(320px,calc(100vw - 20px));max-height:35vh;z-index:65;background:#101426ee;border:1px solid #7363a3;border-radius:12px;color:white;font:12px system-ui;display:none;flex-direction:column;overflow:hidden";
+v18ChatUI.style.cssText="position:fixed;right:10px;top:190px;width:min(320px,calc(100vw - 20px));max-height:35vh;z-index:65;background:#101426ee;border:1px solid #7363a3;border-radius:12px;color:white;font:12px system-ui;display:none;flex-direction:column;overflow:hidden";
 v18ChatUI.innerHTML=`<button id="v18ChatCollapse" style="background:#292d50;color:white;border:0;padding:7px">ROOM CHAT ▾</button><div id="v18ChatInner"><div id="v18ChatFeed" role="log" aria-live="polite" style="height:100px;overflow:auto;padding:7px;overflow-wrap:anywhere"></div><form id="v18ChatForm" style="display:flex;padding:5px;gap:4px"><input id="v18ChatInput" maxlength="160" autocomplete="off" aria-label="Chat message" placeholder="Message (160 max)" style="min-width:0;flex:1;background:#20263e;color:white;border:1px solid #5a6386;border-radius:6px;padding:7px"><button style="background:#343e76;color:white;border:0;border-radius:6px">SEND</button></form></div>`;
 document.body.appendChild(v18ChatUI);
 const v18ChatFeed=document.getElementById("v18ChatFeed");
@@ -7325,16 +7332,94 @@ function v18ShowAccount(){
   });
   document.getElementById("v18AuthSignout").addEventListener("click",async()=>{if(supabaseClient)await supabaseClient.auth.signOut();v18Account=null;v18ChatName="Guest-"+multiplayerId.slice(0,5);status.textContent="Playing as guest";});
 }
+/* BUILD 5: TWO-PART OWNER COMMAND CENTER.
+   Every entry shown here performs an existing action; future privileges are
+   deliberately not presented as working buttons. Owner status is verified
+   against the database whenever the panel is opened. */
+let v18OwnerPage="creation";
+function v18OwnerButton(label,action){
+  const button=document.createElement("button");
+  button.className="menuButton";button.style.width="100%";
+  button.textContent=label;button.addEventListener("click",action);
+  return button;
+}
 async function v18ShowAdmin(){
-  v18Body.replaceChildren();const status=document.createElement("p");status.textContent="Verifying owner permission…";v18Body.append(status);
-  if(!supabaseClient||!await v18RefreshAccount()){status.textContent="Sign in to check owner access.";return;}
-  const check=await supabaseClient.rpc("af_is_owner");
-  if(check.error||check.data!==true){status.textContent="Owner access unavailable for this account. Apply the included SQL setup to enable server-verified permissions.";return;}
-  status.textContent="OWNER PANEL — title grants are checked by the database.";
-  const form=document.createElement("form");form.innerHTML=`<label>Player account UUID<input id="v18GrantPlayer" required placeholder="Player UUID" style="width:100%;padding:10px;margin:6px 0"></label><label>Title<input id="v18GrantTitle" required maxlength="40" placeholder="Title" style="width:100%;padding:10px;margin:6px 0"></label><button class="menuButton" style="width:100%">GRANT TITLE</button>`;v18Body.append(form);
-  form.addEventListener("submit",async e=>{e.preventDefault();const player=document.getElementById("v18GrantPlayer").value.trim(),title=document.getElementById("v18GrantTitle").value.trim();
-    const {error}=await supabaseClient.rpc("af_grant_title",{target_user:player,grant_title:title});status.textContent=error?`Grant failed: ${error.message}`:"Title granted on server.";
+  v18Body.replaceChildren();
+  const status=document.createElement("p");
+  status.textContent="Verifying owner permission…";v18Body.append(status);
+  if(!supabaseClient||!await v18RefreshAccount()){
+    status.textContent="Sign in to check owner access.";return;
+  }
+  let check;
+  try{check=await supabaseClient.rpc("af_is_owner");}
+  catch(_){status.textContent="Could not verify owner access. Check your connection.";return;}
+  if(check.error||check.data!==true){
+    status.textContent="Owner access unavailable for this account.";return;
+  }
+  status.textContent="VERIFIED OWNER • Choose a section";
+  const nav=document.createElement("div");
+  nav.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0";
+  const content=document.createElement("div");
+  const creation=v18OwnerButton("1 • GAMEPLAY & CREATION",()=>{
+    v18OwnerPage="creation";render();
   });
+  const management=v18OwnerButton("2 • PLAYERS & MANAGEMENT",()=>{
+    v18OwnerPage="management";render();
+  });
+  creation.style.fontSize=management.style.fontSize="11px";
+  creation.style.padding=management.style.padding="12px 5px";
+  nav.append(creation,management);v18Body.append(nav,content);
+  function render(){
+    creation.style.outline=v18OwnerPage==="creation"?"2px solid #d2b4ff":"none";
+    management.style.outline=v18OwnerPage==="management"?"2px solid #d2b4ff":"none";
+    content.replaceChildren();
+    const heading=document.createElement("h3");
+    heading.textContent=v18OwnerPage==="creation"?"GAMEPLAY & CREATION":"PLAYERS & MANAGEMENT";
+    heading.style.margin="12px 0";content.append(heading);
+    const search=document.createElement("input");
+    search.type="search";search.placeholder="Search this section…";
+    search.setAttribute("aria-label","Search owner controls");
+    search.style.cssText="width:100%;padding:11px;border-radius:10px;margin:0 0 12px;background:#202942;color:white;border:1px solid #777";
+    const items=document.createElement("div");
+    content.append(search,items);
+    const entries=[];
+    if(v18OwnerPage==="creation"){
+      entries.push({label:"ENTER PRIVATE TESTING ROOM",node:v18OwnerButton("ENTER PRIVATE TESTING ROOM",v18EnterTesting)});
+      if(v18Testing.active)entries.push({label:"TEST LAB CONTROLS",node:v18OwnerButton("TEST LAB CONTROLS",()=>v18Open("OWNER TESTING ROOM"))});
+      const info=document.createElement("p");info.style.cssText="font-size:12px;color:#aeb8d8;line-height:1.5";
+      info.textContent="The private lab includes invincibility, infinite mana, enemy and boss spawning, adjustable HP, and arena clearing. Other creation powers are still in development.";
+      entries.push({label:"LAB DETAILS",node:info});
+    }else{
+      const info=document.createElement("p");info.style.cssText="font-size:12px;color:#aeb8d8;line-height:1.5";
+      info.textContent="Title grants are checked by Supabase. Enter the recipient’s account UUID; do not use an email address or password.";
+      entries.push({label:"TITLE GRANTS",node:info});
+      const form=document.createElement("form");
+      form.innerHTML=`<label>Player account UUID<input name="player" required pattern="[0-9a-fA-F-]{36}" maxlength="36" placeholder="Player UUID" style="width:100%;padding:10px;margin:6px 0"></label><label>Title<input name="title" required maxlength="40" placeholder="Title" style="width:100%;padding:10px;margin:6px 0"></label><button class="menuButton" style="width:100%">GRANT TITLE</button><p class="v18GrantStatus" role="status" style="font-size:12px;overflow-wrap:anywhere"></p>`;
+      form.addEventListener("submit",async e=>{
+        e.preventDefault();const message=form.querySelector(".v18GrantStatus");
+        const player=form.elements.player.value.trim(),title=form.elements.title.value.trim();
+        message.textContent="Granting title…";
+        try{const {error}=await supabaseClient.rpc("af_grant_title",{target_user:player,grant_title:title});
+          message.textContent=error?`Grant failed: ${error.message}`:"Title granted on server.";
+        }catch(_){message.textContent="Could not grant title. Check your connection.";}
+      });
+      entries.push({label:"GRANT TITLE",node:form});
+      entries.push({label:"ACCOUNT",node:v18OwnerButton("MY ACCOUNT",()=>v18Open("ACCOUNT"))});
+      entries.push({label:"ROOM CHAT",node:v18OwnerButton("ROOM CHAT",()=>v18Open("ROOM CHAT"))});
+    }
+    function filter(){
+      const term=search.value.trim().toLowerCase();items.replaceChildren();
+      let count=0;
+      for(const entry of entries){
+        if(!term||entry.label.toLowerCase().includes(term)){
+          items.append(entry.node);count++;
+        }
+      }
+      if(!count){const empty=document.createElement("p");empty.textContent="No matching controls in this section.";items.append(empty);}
+    }
+    search.addEventListener("input",filter);filter();
+  }
+  render();
 }
 document.getElementById("menuChat").addEventListener("click",()=>v18Open("ROOM CHAT"));
 document.getElementById("menuAccount").addEventListener("click",()=>v18Open("ACCOUNT"));
@@ -7343,6 +7428,110 @@ document.getElementById("menuAdmin").addEventListener("click",()=>v18Open("OWNER
 document.getElementById("menuSettings").addEventListener("click", () => v18Open("SETTINGS"));
 document.getElementById("menuCustomization").addEventListener("click", () => v18Open("CUSTOMIZATION"));
 document.getElementById("menuRankRewards").addEventListener("click", () => v18Open("RANK REWARDS"));
+
+
+/* BUILD 4: OWNER-ONLY LOCAL TESTING ARENA.
+   Access is checked against the existing server-side owner RPC before entry.
+   This arena is LOCAL, not a synchronized multiplayer room. No rewards or
+   progress are saved while testing. Exit restores the original game state. */
+const v18Testing={active:false,invincible:true,infiniteMana:true,snapshot:null};
+const v18TestHud=document.createElement("button");
+v18TestHud.textContent="TEST LAB • CONTROLS";
+v18TestHud.style.cssText="position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:90;display:none;background:#24164a;color:#fff;border:1px solid #c5aaff;border-radius:12px;padding:10px;font-weight:800";
+document.body.appendChild(v18TestHud);
+v18TestHud.addEventListener("click",()=>v18Open("OWNER TESTING ROOM"));
+async function v18EnterTesting(){
+  if(v18Testing.active){v18Open("OWNER TESTING ROOM");return;}
+  if(!supabaseClient||!await v18RefreshAccount()){notice("SIGN IN AS OWNER FIRST");return;}
+  const {data,error}=await supabaseClient.rpc("af_is_owner");
+  if(error||data!==true){notice("OWNER PERMISSION REQUIRED");return;}
+  if(multiplayerChannel){await supabaseClient.removeChannel(multiplayerChannel);multiplayerChannel=null;multiplayerRoom=null;multiplayerPlayers.clear();v18ChatUI.style.display="none";}
+  v18Testing.snapshot={hp:S.hp,mana:S.mana,x:S.x,y:S.y,essence:S.essence,xp:S.xp,rank:S.rank,selected:S.selected,magic:structuredClone(S.magic),kills:S.kills,bossesSpawned,bossKillTarget,enemyTimer,awakening:S.awakening,awakened:S.awakened,awakeningTime:S.awakeningTime};
+  v18Testing.active=true;v18Testing.invincible=true;v18Testing.infiniteMana=true;
+  S.enemies.length=0;S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;S.particles.length=0;
+  S.hp=100;S.mana=100;S.dead=false;S.deathScreen=false;S.deathTimer=0;deathOverlay.style.display="none";
+  v18Panel.style.display="none";closeMainMenu();v18TestHud.style.display="block";v18MusicStart();notice("OWNER TESTING ROOM — NO REWARDS SAVED");
+}
+function v18ExitTesting(){
+  if(!v18Testing.active)return;
+  const b=v18Testing.snapshot;
+  S.hp=b.hp;S.mana=b.mana;S.x=b.x;S.y=b.y;S.essence=b.essence;S.xp=b.xp;S.rank=b.rank;S.selected=b.selected;S.magic=b.magic;S.kills=b.kills;
+  S.awakening=b.awakening;S.awakened=b.awakened;S.awakeningTime=b.awakeningTime;
+  bossesSpawned=b.bossesSpawned;bossKillTarget=b.bossKillTarget;enemyTimer=b.enemyTimer;
+  S.enemies.length=0;S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;S.particles.length=0;
+  S.dead=false;S.deathScreen=false;S.deathTimer=0;deathOverlay.style.display="none";
+  v18Testing.active=false;v18Testing.snapshot=null;v18TestHud.style.display="none";v18Panel.style.display="none";
+  renderForge();renderBook();renderTree();updateHUD();openMainMenu();notice("TEST LAB CLOSED — NORMAL SAVE RESTORED");
+}
+function v18ShowTestingControls(){
+  if(!v18Testing.active){v18Body.textContent="Enter from the verified Owner Panel first.";return;}
+  v18Body.innerHTML=`<p>PRIVATE LOCAL LAB • Progress and rewards are discarded on exit. Multiplayer is disconnected on entry.</p>
+  <label style="display:block;margin:12px 0"><input id="v18TestGod" type="checkbox"> Invincible</label>
+  <label style="display:block;margin:12px 0"><input id="v18TestMana" type="checkbox"> Infinite mana</label>
+  <label>Enemy HP <input id="v18TestHp" type="number" min="1" max="100000" value="200" style="width:100%;padding:8px"></label>
+  <label>Enemy type <select id="v18TestEnemy" style="width:100%;padding:8px"></select></label>
+  <button id="v18TestSpawn" class="menuButton" style="width:100%">SPAWN ENEMY</button>
+  <label>Boss <select id="v18TestBoss" style="width:100%;padding:8px"></select></label>
+  <button id="v18TestSpawnBoss" class="menuButton" style="width:100%">SPAWN BOSS</button>
+  <button id="v18TestClear" class="menuButton" style="width:100%">CLEAR ARENA</button>
+  <button id="v18TestExit" class="menuButton" style="width:100%;background:#67304b">EXIT LAB • RESTORE NORMAL GAME</button>`;
+  const god=document.getElementById("v18TestGod"),mana=document.getElementById("v18TestMana");
+  god.checked=v18Testing.invincible;mana.checked=v18Testing.infiniteMana;
+  god.onchange=()=>v18Testing.invincible=god.checked;
+  mana.onchange=()=>v18Testing.infiniteMana=mana.checked;
+  const enemySelect=document.getElementById("v18TestEnemy"),bossSelect=document.getElementById("v18TestBoss");
+  Object.keys(enemyTypes).forEach(n=>enemySelect.add(new Option(n,n)));
+  bossRoster.forEach((b,i)=>bossSelect.add(new Option(b.name,String(i))));
+  const hp=()=>Math.max(1,Math.min(100000,Number(document.getElementById("v18TestHp").value)||200));
+  document.getElementById("v18TestSpawn").onclick=()=>{
+    if(S.enemies.length>=30){notice("LAB LIMIT: 30 ENEMIES");return;}
+    const type=enemySelect.value;spawnEnemy();const e=S.enemies[S.enemies.length-1];
+    if(e){const config=enemyTypes[type];Object.assign(e,{type,hp:hp(),maxHp:hp(),r:config.radius,speed:config.speed,damage:config.damage,color:config.color,x:S.x+210,y:S.y-100,boss:false,ranged:!!config.ranged,dash:!!config.dash,shieldType:!!config.shield,leech:!!config.leech,element:config.element||null});}
+    v18Panel.style.display="none";
+  };
+  document.getElementById("v18TestSpawnBoss").onclick=()=>{
+    if(S.enemies.some(e=>e.boss)){notice("CLEAR CURRENT BOSS FIRST");return;}
+    const index=Number(bossSelect.value);const old=bossesSpawned;bossesSpawned=index;spawnMiniBoss();bossesSpawned=old;
+    const boss=S.enemies.find(e=>e.boss);if(boss){boss.hp=hp();boss.maxHp=hp();}
+    v18Panel.style.display="none";
+  };
+  document.getElementById("v18TestClear").onclick=()=>{S.enemies.length=0;S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;S.particles.length=0;notice("LAB CLEARED");};
+  document.getElementById("v18TestExit").onclick=v18ExitTesting;
+}
+/* Original, synthesized, looping background music; no external audio files.
+   iOS playback is initiated only from a user tap. Music and SFX have
+   independent volume controls. */
+let v18MusicOn=false,v18MusicNext=0,v18MusicStep=0,v18MusicMode="explore";
+const v18MusicNotes={explore:[220,0,261.63,329.63,0,293.66,261.63,0,196,0,246.94,293.66,0,261.63,246.94,0],boss:[110,164.81,220,164.81,123.47,185,246.94,185,130.81,196,261.63,196,123.47,185,246.94,185]};
+function v18MusicStart(){
+  try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!audioContext)audioContext=new AC();
+    if(audioContext.state==="suspended")audioContext.resume();
+    v18MusicOn=true;v18MusicNext=audioContext.currentTime+.06;
+  }catch(_){notice("MUSIC UNAVAILABLE");}
+}
+function v18MusicTick(){
+  if(!v18MusicOn||!audioContext||audioContext.state!=="running"||document.hidden||gameSettings.musicVolume<=0)return;
+  const mode=S.enemies.some(e=>e.boss)?"boss":"explore";
+  if(mode!==v18MusicMode){v18MusicMode=mode;v18MusicStep=0;v18MusicNext=audioContext.currentTime+.1;}
+  const interval=mode==="boss"?.18:.29;
+  if(v18MusicNext<audioContext.currentTime-.5)v18MusicNext=audioContext.currentTime+.03;
+  while(v18MusicNext<audioContext.currentTime+.13){
+    const note=v18MusicNotes[mode][v18MusicStep++%16];
+    if(note){
+      const osc=audioContext.createOscillator(),gain=audioContext.createGain();
+      osc.type=mode==="boss"?"triangle":"sine";
+      osc.frequency.setValueAtTime(note,v18MusicNext);
+      const volume=Math.max(.0001,gameSettings.musicVolume*(mode==="boss"?.075:.06));
+      gain.gain.setValueAtTime(.0001,v18MusicNext);
+      gain.gain.linearRampToValueAtTime(volume,v18MusicNext+.025);
+      gain.gain.exponentialRampToValueAtTime(.0001,v18MusicNext+interval*.93);
+      osc.connect(gain);gain.connect(audioContext.destination);
+      osc.start(v18MusicNext);osc.stop(v18MusicNext+interval);
+    }
+    v18MusicNext+=interval;
+  }
+}
 
 /* =========================================================
    PAUSE GAME WHILE MENU IS OPEN
@@ -7371,7 +7560,7 @@ updateHUD();
 v18HandleRecoveryLink();
 
 notice(
-  "ARCANE FORGE v1.8 — BUILD 3.1"
+  "ARCANE FORGE v1.8 — BUILD 5"
 );
 
 requestAnimationFrame(
