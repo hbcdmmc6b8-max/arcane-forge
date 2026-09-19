@@ -1689,7 +1689,7 @@ function playSfx(kind = "cast", element = "Fire") {
     osc.frequency.setValueAtTime(pitch, now);
     osc.frequency.exponentialRampToValueAtTime(Math.max(35,pitch*.55),now+duration);
     gain.gain.setValueAtTime(.0001,now);
-    gain.gain.exponentialRampToValueAtTime(kind === "boss" ? .11 : .045,now+.012);
+    gain.gain.exponentialRampToValueAtTime(kind === "boss" ? .44 : .18,now+.012);
     gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
     osc.connect(gain); gain.connect(audioContext.destination);
     osc.start(now); osc.stop(now+duration+.01);
