@@ -6371,7 +6371,7 @@ mainMenu.innerHTML = `
     <button id="menuSettings" class="menuButton">SETTINGS</button>
 
     <div class="menuVersion">
-      v1.8 • BUILD 2
+      v1.8 • BUILD 3.1
     </div>
 
   </div>
@@ -7063,8 +7063,10 @@ function v18Open(title) {
   if (title === "ROOM CHAT") v18ShowChat(true);
   if (title === "ACCOUNT") v18ShowAccount();
   if (title === "OWNER PANEL") v18ShowAdmin();
+  if (title === "RESET PASSWORD") v18ShowResetPassword();
 }
 document.getElementById("v18Back").addEventListener("click", () => {
+  if (v18RecoveryPending) { v18Open("RESET PASSWORD"); return; }
   v18Panel.style.display = "none";
 });
 function v18Settings() {
@@ -7260,10 +7262,47 @@ function v18ShowChat(full){
   form.addEventListener("submit",e=>{e.preventDefault();v18SendChat(input.value);input.value="";setTimeout(refresh,200);});
   const hint=document.createElement("p");hint.style.fontSize="12px";hint.textContent="Room chat is public to anyone with the room code. Do not share personal details. Mute/block work on this device; reporting needs a moderation backend.";v18Body.append(hint);
 }
+/* Password recovery: use the same GitHub Pages origin for the emailed link. */
+let v18RecoveryPending = false;
+const v18RecoveryRedirect = location.origin + location.pathname;
+function v18ShowResetPassword(){
+  v18Body.innerHTML = `<p>Enter a new password for your Arcane Forge account.</p>
+    <form id="v18ResetForm"><input id="v18NewPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="New password (8+ characters)" style="width:100%;padding:10px;margin:5px 0">
+    <input id="v18ConfirmPassword" type="password" autocomplete="new-password" minlength="8" required placeholder="Confirm new password" style="width:100%;padding:10px;margin:5px 0">
+    <button class="menuButton" type="submit" style="width:100%">SET NEW PASSWORD</button></form><p id="v18ResetStatus" role="status"></p>`;
+  document.getElementById("v18ResetForm").addEventListener("submit",async e=>{
+    e.preventDefault();const status=document.getElementById("v18ResetStatus");
+    const password=document.getElementById("v18NewPassword").value;
+    if(password!==document.getElementById("v18ConfirmPassword").value){status.textContent="Passwords do not match.";return;}
+    if(!supabaseClient){status.textContent="Supabase is unavailable.";return;}
+    status.textContent="Updating password…";
+    try{const {error}=await supabaseClient.auth.updateUser({password});
+      if(error){status.textContent=error.message;return;}
+      v18RecoveryPending=false;
+      history.replaceState(null,"",v18RecoveryRedirect);
+      v18Open("ACCOUNT");
+      const accountStatus=document.getElementById("v18AuthStatus");
+      if(accountStatus)accountStatus.textContent="Password updated. You can sign in with your new password.";
+    }catch(err){status.textContent="Could not update password. Request a new reset email.";}
+  });
+}
+function v18HandleRecoveryLink(){
+  if(!supabaseClient)return;
+  const params=new URLSearchParams(location.hash.replace(/^#/,""));
+  const query=new URLSearchParams(location.search);
+  const recovery=params.get("type")==="recovery"||query.get("type")==="recovery";
+  if(recovery){v18RecoveryPending=true;v18Open("RESET PASSWORD");}
+  supabaseClient.auth.onAuthStateChange((event)=>{
+    if(event==="PASSWORD_RECOVERY"){
+      v18RecoveryPending=true;
+      setTimeout(()=>v18Open("RESET PASSWORD"),0);
+    }
+  });
+}
 let v18Account=null;
 async function v18RefreshAccount(){if(!supabaseClient)return null;try{const {data}=await supabaseClient.auth.getUser();v18Account=data.user||null;}catch(_){v18Account=null;}if(v18Account)v18ChatName="Player-"+v18Account.id.slice(0,5);return v18Account;}
 function v18ShowAccount(){
-  v18Body.innerHTML=`<p id="v18AuthStatus">Checking account…</p><form id="v18AuthForm"><input id="v18AuthEmail" type="email" autocomplete="email" required placeholder="Email" style="width:100%;padding:10px;margin:5px 0"><input id="v18AuthPassword" type="password" autocomplete="current-password" required minlength="8" placeholder="Password" style="width:100%;padding:10px;margin:5px 0"><button class="menuButton" type="submit" style="width:100%">SIGN IN</button></form><button id="v18AuthSignup" class="menuButton" style="width:100%">CREATE ACCOUNT</button><button id="v18AuthSignout" class="menuButton" style="width:100%">SIGN OUT</button><p style="font-size:12px;color:#adb5d5">Guest play remains available. Accounts require Supabase Auth email/password to be enabled. Do not enter a password in chat.</p>`;
+  v18Body.innerHTML=`<p id="v18AuthStatus">Checking account…</p><form id="v18AuthForm"><input id="v18AuthEmail" type="email" autocomplete="email" required placeholder="Email" style="width:100%;padding:10px;margin:5px 0"><input id="v18AuthPassword" type="password" autocomplete="current-password" required minlength="8" placeholder="Password" style="width:100%;padding:10px;margin:5px 0"><button class="menuButton" type="submit" style="width:100%">SIGN IN</button></form><button id="v18AuthSignup" class="menuButton" style="width:100%">CREATE ACCOUNT</button><button id="v18AuthForgot" class="menuButton" style="width:100%">FORGOT PASSWORD?</button><button id="v18AuthSignout" class="menuButton" style="width:100%">SIGN OUT</button><p style="font-size:12px;color:#adb5d5">Guest play remains available. Accounts require Supabase Auth email/password to be enabled. Do not enter a password in chat.</p>`;
   const status=document.getElementById("v18AuthStatus");
   const update=async()=>{await v18RefreshAccount();status.textContent=v18Account?`Signed in: ${v18Account.email}`:"Playing as guest";};update();
   const auth=async(signup)=>{if(!supabaseClient){status.textContent="Supabase is not connected";return;}
@@ -7275,6 +7314,15 @@ function v18ShowAccount(){
   };
   document.getElementById("v18AuthForm").addEventListener("submit",e=>{e.preventDefault();auth(false);});
   document.getElementById("v18AuthSignup").addEventListener("click",()=>auth(true));
+  document.getElementById("v18AuthForgot").addEventListener("click",async()=>{
+    const email=document.getElementById("v18AuthEmail").value.trim();
+    if(!email||!document.getElementById("v18AuthEmail").checkValidity()){status.textContent="Enter your account email above first.";return;}
+    if(!supabaseClient){status.textContent="Supabase is unavailable.";return;}
+    status.textContent="Requesting reset email…";
+    try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:v18RecoveryRedirect});
+      status.textContent=error?error.message:"If this account exists, check your email for a NEW reset link.";
+    }catch(_){status.textContent="Could not request reset email. Try again.";}
+  });
   document.getElementById("v18AuthSignout").addEventListener("click",async()=>{if(supabaseClient)await supabaseClient.auth.signOut();v18Account=null;v18ChatName="Guest-"+multiplayerId.slice(0,5);status.textContent="Playing as guest";});
 }
 async function v18ShowAdmin(){
@@ -7320,8 +7368,10 @@ renderBook();
 renderTree();
 updateHUD();
 
+v18HandleRecoveryLink();
+
 notice(
-  "ARCANE FORGE v1.8 — BUILD 3"
+  "ARCANE FORGE v1.8 — BUILD 3.1"
 );
 
 requestAnimationFrame(
