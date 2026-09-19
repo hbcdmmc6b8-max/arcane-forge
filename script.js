@@ -65,6 +65,7 @@ function connectMultiplayer(roomCode) {
   }
 
   multiplayerPlayers.clear();
+  if (typeof afPauseReset === "function") afPauseReset();
   multiplayerRoom = code;
   if (typeof v18ChatReset === "function") v18ChatReset(code);
 
@@ -129,6 +130,9 @@ function connectMultiplayer(roomCode) {
         );
       }
     )
+    .on("broadcast", {event:"af-pause"}, ({payload}) => {
+      if (typeof afPauseReceive === "function") afPauseReceive(payload);
+    })
     .on("broadcast", {event:"room-chat"}, ({payload}) => {
       if (typeof v18ReceiveChat === "function") v18ReceiveChat(payload);
     })
@@ -3717,7 +3721,7 @@ let bossKillTarget = 20;
 
 function update(time) {
   if (typeof v18MusicTick === "function") v18MusicTick();
-if (typeof menuOpen !== "undefined" && menuOpen) {
+if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "undefined" && afPauseState.active)) {
   previousTime = time;
   drawWorld();
   updateHUD();
@@ -7603,6 +7607,85 @@ function v18MusicTick(){
     }
     v18MusicNext+=interval;
   }
+}
+
+/* =========================================================
+   BUILD 7 — IN-GAME PAUSE + ROOM-WIDE PAUSE
+   Realtime broadcast is room-scoped, not a persistent server lock.
+========================================================= */
+const afPauseState={active:false,seq:0,by:"",room:"",lastSeen:0};
+const afPauseOverlay=document.createElement("div");
+afPauseOverlay.id="afPauseOverlay";
+afPauseOverlay.style.cssText="position:fixed;inset:0;z-index:1050;display:none;align-items:center;justify-content:center;background:#050715d9;padding:16px;color:#fff;font-family:system-ui";
+afPauseOverlay.innerHTML=`<section style="width:min(410px,100%);max-height:88dvh;overflow:auto;background:#101426;border:1px solid #8b79c5;border-radius:20px;padding:20px;box-shadow:0 20px 60px #000"><h2 style="margin:0 0 8px">GAME PAUSED</h2><p id="afPauseWho" style="font-size:12px;color:#d6caff"></p><div id="afPauseActions" style="display:grid;gap:9px"></div></section>`;
+document.body.appendChild(afPauseOverlay);
+const afPauseWho=document.getElementById("afPauseWho");
+const afPauseActions=document.getElementById("afPauseActions");
+const afPauseButton=document.createElement("button");
+afPauseButton.id="afPauseButton";afPauseButton.textContent="☰ PAUSE";
+afPauseButton.style.cssText="position:fixed;left:12px;top:12px;z-index:72;border:1px solid #9985d9;border-radius:12px;background:#171c37;color:white;padding:10px 13px;font:800 12px system-ui;touch-action:manipulation";
+document.body.appendChild(afPauseButton);
+function afPauseReset(){
+  afPauseState.active=false;afPauseState.seq=0;afPauseState.by="";afPauseState.room="";
+  afPauseOverlay.style.display="none";
+}
+function afPauseRender(){
+  afPauseOverlay.style.display=afPauseState.active?"flex":"none";
+  afPauseButton.textContent=afPauseState.active?"☰ MENU":"☰ PAUSE";
+  if(!afPauseState.active)return;
+  afPauseWho.textContent=multiplayerRoom?"Shared pause • "+(afPauseState.by==="me"?"You": "Another player")+" opened the menu. Room and chat stay connected.":"Single-player pause";
+  afPauseActions.replaceChildren();
+  const add=(label,fn)=>{const b=document.createElement("button");b.textContent=label;b.style.cssText="background:#282f57;color:white;border:1px solid #5b6598;border-radius:12px;padding:12px;font:700 14px system-ui";b.addEventListener("click",fn);afPauseActions.appendChild(b);};
+  add("RESUME FOR EVERYONE",()=>afPauseSet(false));
+  add("SETTINGS",()=>v18Open("SETTINGS"));
+  add("MAGIC BOOK",()=>{const modal=(document.getElementById("bookModal")||document.getElementById("book"));if(modal){modal.classList.add("open");renderBook();afPauseOverlay.style.display="none";}else notice("BOOK UNAVAILABLE");});
+  add("FORGE",()=>{const modal=(document.getElementById("forgeModal")||document.getElementById("forge"));if(modal){modal.classList.add("open");renderForge();afPauseOverlay.style.display="none";}else notice("FORGE UNAVAILABLE");});
+  add("OWNER PANEL (VERIFIED OWNERS)",()=>v18Open("OWNER PANEL"));
+  if(multiplayerRoom)add("LEAVE ROOM",async()=>{
+    afPauseSet(false);
+    if(multiplayerChannel&&supabaseClient)await supabaseClient.removeChannel(multiplayerChannel);
+    multiplayerChannel=null;multiplayerRoom=null;multiplayerPlayers.clear();
+    if(typeof v18ChatUI!=="undefined")v18ChatUI.style.display="none";
+    notice("LEFT MULTIPLAYER ROOM");
+  });
+}
+function afPauseBroadcast(active){
+  if(!multiplayerRoom||!multiplayerChannel)return;
+  multiplayerChannel.send({type:"broadcast",event:"af-pause",payload:{
+    room:multiplayerRoom,active,seq:afPauseState.seq,from:multiplayerId,
+    sentAt:Date.now()
+  }}).catch(()=>notice("PAUSE SYNC FAILED — CHECK CONNECTION"));
+}
+function afPauseSet(active){
+  if(menuOpen){notice("START THE GAME FIRST");return;}
+  afPauseState.seq=Math.max(Date.now(),afPauseState.seq+1);
+  afPauseState.active=!!active;afPauseState.by="me";afPauseState.room=multiplayerRoom||"";
+  if(!active){v18Panel.style.display="none";document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"));}
+  afPauseRender();afPauseBroadcast(!!active);
+}
+function afPauseReceive(payload){
+  if(!payload||!multiplayerRoom||payload.room!==multiplayerRoom||payload.from===multiplayerId)return;
+  if(typeof payload.active!=="boolean"||!Number.isSafeInteger(payload.seq)||Math.abs(Date.now()-payload.sentAt)>30000)return;
+  if(payload.seq<afPauseState.seq)return;
+  afPauseState.seq=payload.seq;afPauseState.active=payload.active;
+  afPauseState.by="other";afPauseState.room=multiplayerRoom;
+  if(!payload.active){v18Panel.style.display="none";document.querySelectorAll(".modal.open").forEach(m=>m.classList.remove("open"));}
+  afPauseRender();
+}
+afPauseButton.addEventListener("click",()=>{
+  if(menuOpen){notice("START THE GAME FIRST");return;}
+  if(afPauseState.active){afPauseOverlay.style.display="flex";return;}
+  afPauseSet(true);
+});
+// Keep pause overlay visible when closing Settings / Owner Panel.
+document.getElementById("v18Back").addEventListener("click",()=>{
+  if(afPauseState.active)setTimeout(()=>{if(v18Panel.style.display==="none")afPauseOverlay.style.display="flex";},0);
+});
+for(const id of ["forgeModal","bookModal","forge","book"]){
+  const modal=document.getElementById(id);
+  if(modal)modal.querySelectorAll(".close").forEach(b=>b.addEventListener("click",()=>{
+    if(afPauseState.active)afPauseOverlay.style.display="flex";
+  }));
 }
 
 /* =========================================================
