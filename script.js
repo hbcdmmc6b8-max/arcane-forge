@@ -5756,6 +5756,9 @@ function drawWorld() {
       ctx.stroke();
     }
 
+    /* V1.8 equipped rank cosmetics */
+    if (typeof v18DrawAura === "function") v18DrawAura(S.x, S.y);
+
     drawPlayerElement(
       S.x,
       S.y,
@@ -5763,6 +5766,8 @@ function drawWorld() {
       S.awakened,
       playerFacing
     );
+
+    if (typeof v18DrawTrimAndTitle === "function") v18DrawTrimAndTitle(S.x, S.y);
 
     if (
       S.ward > 0
@@ -6359,7 +6364,7 @@ mainMenu.innerHTML = `
     <button id="menuSettings" class="menuButton">SETTINGS</button>
 
     <div class="menuVersion">
-      v1.8 • MENU PREVIEW
+      v1.8 • BUILD 2
     </div>
 
   </div>
@@ -7090,30 +7095,89 @@ function v18Settings() {
   }
 }
 const v18CosmeticKey = "arcaneForgeCosmeticsV18";
-let v18Cosmetics = {title:"None",aura:"None"};
+const v18RankRewards = [
+  {rank:1,  title:"Initiate",        aura:"Arcane Spark", trim:"Silver Edge", color:"#b9c6ff"},
+  {rank:2,  title:"Spellbinder",     aura:"Ember Ring",   trim:"Crimson Edge",color:"#ff756b"},
+  {rank:3,  title:"Runeborn",        aura:"Rune Orbit",   trim:"Violet Edge", color:"#b58cff"},
+  {rank:5,  title:"Arcane Adept",    aura:"Aether Pulse", trim:"Azure Edge",  color:"#75c8ff"},
+  {rank:8,  title:"Rift Walker",     aura:"Rift Halo",    trim:"Rift Edge",   color:"#d08cff"},
+  {rank:12, title:"Forge Master",    aura:"Forge Crown",  trim:"Golden Edge", color:"#ffd86b"},
+  {rank:16, title:"Arcane Sovereign",aura:"Sovereign",    trim:"Royal Edge",  color:"#f2b8ff"},
+  {rank:20, title:"Ascendant",       aura:"Ascendant",    trim:"Prismatic",   color:"#ffffff"}
+];
+let v18Cosmetics = {title:"None",aura:"None",trim:"None"};
 try { v18Cosmetics = {...v18Cosmetics,...JSON.parse(localStorage.getItem(v18CosmeticKey)||"{}")}; } catch (_) {}
+function v18SaveCosmetics() {
+  try { localStorage.setItem(v18CosmeticKey,JSON.stringify(v18Cosmetics)); } catch (_) {}
+}
+function v18UnlockedRewards() { return v18RankRewards.filter(r => S.rank >= r.rank); }
+function v18RewardBy(field,value) { return v18RankRewards.find(r => r[field] === value); }
+function v18ValidateCosmetics() {
+  for (const key of ["title","aura","trim"]) {
+    if (v18Cosmetics[key] !== "None") {
+      const reward = v18RewardBy(key,v18Cosmetics[key]);
+      if (!reward || S.rank < reward.rank) v18Cosmetics[key] = "None";
+    }
+  }
+  v18SaveCosmetics();
+}
+v18ValidateCosmetics();
+function v18OptionList(field) {
+  return [`<option value="None">None</option>`].concat(v18RankRewards.map(r =>
+    `<option value="${r[field]}" ${S.rank < r.rank ? "disabled" : ""}>${r[field]}${S.rank < r.rank ? ` — Rank ${r.rank}` : ""}</option>`
+  )).join("");
+}
 function v18Customization() {
-  v18Body.innerHTML = `<p style="color:#adb5d5">Equip cosmetics here, away from combat controls. Rank and boss rewards will be added in later builds.</p>
-    <label style="display:block;margin:18px 0">TITLE <select id="v18TitleSelect" style="display:block;width:100%;padding:12px;background:#222944;color:white;border-radius:10px"><option>None</option></select></label>
-    <label style="display:block;margin:18px 0">AURA <select id="v18AuraSelect" style="display:block;width:100%;padding:12px;background:#222944;color:white;border-radius:10px"><option>None</option></select></label>
-    <p id="v18Equipped" style="color:#b9a8ff"></p>`;
-  const title = document.getElementById("v18TitleSelect");
-  const aura = document.getElementById("v18AuraSelect");
-  title.value = "None"; aura.value = "None";
-  const display = () => { document.getElementById("v18Equipped").textContent = `Equipped: ${v18Cosmetics.title} / ${v18Cosmetics.aura}`; };
+  v18ValidateCosmetics();
+  v18Body.innerHTML = `<p style="color:#adb5d5">Equip rewards unlocked by your current rank. Locked cosmetics show the rank required.</p>
+    <label style="display:block;margin:16px 0">TITLE<select id="v18TitleSelect" style="display:block;width:100%;padding:12px;margin-top:6px;background:#222944;color:white;border:1px solid #58618c;border-radius:10px">${v18OptionList("title")}</select></label>
+    <label style="display:block;margin:16px 0">AURA<select id="v18AuraSelect" style="display:block;width:100%;padding:12px;margin-top:6px;background:#222944;color:white;border:1px solid #58618c;border-radius:10px">${v18OptionList("aura")}</select></label>
+    <label style="display:block;margin:16px 0">CHARACTER TRIM<select id="v18TrimSelect" style="display:block;width:100%;padding:12px;margin-top:6px;background:#222944;color:white;border:1px solid #58618c;border-radius:10px">${v18OptionList("trim")}</select></label>
+    <p id="v18Equipped" style="color:#b9a8ff;line-height:1.55"></p>`;
+  const fields = [["v18TitleSelect","title"],["v18AuraSelect","aura"],["v18TrimSelect","trim"]];
+  const display = () => { document.getElementById("v18Equipped").textContent = `Equipped: ${v18Cosmetics.title} • ${v18Cosmetics.aura} • ${v18Cosmetics.trim}`; };
+  for (const [id,key] of fields) {
+    const el=document.getElementById(id); el.value=v18Cosmetics[key];
+    el.addEventListener("change",()=>{v18Cosmetics[key]=el.value;v18SaveCosmetics();display();});
+  }
   display();
-  for (const [el,key] of [[title,"title"],[aura,"aura"]]) el.addEventListener("change", () => {
-    v18Cosmetics[key] = el.value;
-    try { localStorage.setItem(v18CosmeticKey,JSON.stringify(v18Cosmetics)); } catch (_) {}
-    display();
-  });
 }
 function v18Rewards() {
-  v18Body.innerHTML = "";
-  const info = document.createElement("p");
-  info.textContent = `Current rank: ${S.rank}. Rank-based title and aura rewards will arrive in a later V1.8 build.`;
-  info.style.color = "#cbd1ed";
-  v18Body.appendChild(info);
+  v18ValidateCosmetics();
+  v18Body.innerHTML = `<p style="color:#cbd1ed">Current rank: <b>${S.rank}</b>. Rewards unlock automatically as your rank increases.</p>`;
+  for (const reward of v18RankRewards) {
+    const unlocked=S.rank>=reward.rank;
+    const card=document.createElement("div");
+    card.style.cssText=`margin:12px 0;padding:14px;border-radius:14px;border:1px solid ${unlocked?reward.color:"#353b55"};background:${unlocked?"rgba(35,39,70,.9)":"rgba(18,21,34,.8)"};opacity:${unlocked?1:.58}`;
+    card.innerHTML=`<div style="font-weight:900;color:${unlocked?reward.color:"#9aa0b7"}">RANK ${reward.rank} ${unlocked?"— UNLOCKED":"— LOCKED"}</div><div style="margin-top:7px;line-height:1.55">Title: <b>${reward.title}</b><br>Aura: <b>${reward.aura}</b><br>Trim: <b>${reward.trim}</b></div>${unlocked?'<button class="menuButton v18EquipSet" style="width:100%;margin-top:10px">EQUIP SET</button>':""}`;
+    if (unlocked) card.querySelector(".v18EquipSet").addEventListener("click",()=>{v18Cosmetics={title:reward.title,aura:reward.aura,trim:reward.trim};v18SaveCosmetics();notice(`EQUIPPED — ${reward.title}`);v18Rewards();});
+    v18Body.appendChild(card);
+  }
+}
+function v18DrawAura(x,y) {
+  if (v18Cosmetics.aura === "None") return;
+  const reward=v18RewardBy("aura",v18Cosmetics.aura); if(!reward||S.rank<reward.rank)return;
+  const t=performance.now()*.001;
+  ctx.save(); ctx.translate(x,y); ctx.strokeStyle=reward.color; ctx.fillStyle=reward.color;
+  ctx.shadowColor=reward.color; ctx.shadowBlur=18; ctx.lineWidth=2;
+  const pulse=25+Math.sin(t*4)*3;
+  ctx.globalAlpha=.34; ctx.beginPath(); ctx.arc(0,0,pulse,0,Math.PI*2); ctx.stroke();
+  ctx.globalAlpha=.7;
+  for(let i=0;i<4;i++){const a=t*(.7+reward.rank*.01)+i*Math.PI/2;const rr=31+(i%2)*5;ctx.beginPath();ctx.arc(Math.cos(a)*rr,Math.sin(a)*rr,2.2,0,Math.PI*2);ctx.fill();}
+  if(reward.rank>=8){ctx.globalAlpha=.22;ctx.beginPath();ctx.arc(0,0,pulse+10,0,Math.PI*2);ctx.stroke();}
+  ctx.restore();
+}
+function v18DrawTrimAndTitle(x,y) {
+  ctx.save();
+  if(v18Cosmetics.trim!=="None"){
+    const reward=v18RewardBy("trim",v18Cosmetics.trim);
+    if(reward&&S.rank>=reward.rank){ctx.strokeStyle=reward.color;ctx.shadowColor=reward.color;ctx.shadowBlur=12;ctx.lineWidth=2;ctx.globalAlpha=.9;ctx.beginPath();ctx.arc(x,y,19,0,Math.PI*2);ctx.stroke();}
+  }
+  if(v18Cosmetics.title!=="None"){
+    const reward=v18RewardBy("title",v18Cosmetics.title);
+    if(reward&&S.rank>=reward.rank){ctx.globalAlpha=1;ctx.fillStyle=reward.color;ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.textBaseline="bottom";ctx.shadowColor="#000";ctx.shadowBlur=5;ctx.fillText(v18Cosmetics.title,x,y-27);}
+  }
+  ctx.restore();
 }
 document.getElementById("menuSettings").addEventListener("click", () => v18Open("SETTINGS"));
 document.getElementById("menuCustomization").addEventListener("click", () => v18Open("CUSTOMIZATION"));
@@ -7144,7 +7208,7 @@ renderTree();
 updateHUD();
 
 notice(
-  "ARCANE FORGE v1.4 — AWAKENING"
+  "ARCANE FORGE v1.8 — BUILD 2"
 );
 
 requestAnimationFrame(
