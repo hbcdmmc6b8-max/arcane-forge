@@ -813,6 +813,131 @@ function updateHUD() {
   }
 }
 
+
+/* =========================
+   BOSS HUD
+========================= */
+
+const bossHud =
+  document.createElement("div");
+
+Object.assign(
+  bossHud.style,
+  {
+    position: "fixed",
+    left: "50%",
+    top: "76px",
+    transform: "translateX(-50%)",
+    width: "min(520px, 72vw)",
+    zIndex: "56",
+    pointerEvents: "none",
+    display: "none",
+    textAlign: "center"
+  }
+);
+
+const bossHudName =
+  document.createElement("div");
+
+Object.assign(
+  bossHudName.style,
+  {
+    color: "#ffffff",
+    fontWeight: "900",
+    fontSize: "13px",
+    letterSpacing: "1.5px",
+    marginBottom: "4px",
+    textShadow: "0 0 10px #d68cff"
+  }
+);
+
+const bossHudTrack =
+  document.createElement("div");
+
+Object.assign(
+  bossHudTrack.style,
+  {
+    height: "14px",
+    borderRadius: "20px",
+    overflow: "hidden",
+    background: "rgba(28,5,38,.9)",
+    border: "1px solid rgba(255,255,255,.35)",
+    boxShadow: "0 0 18px rgba(202,115,255,.25)"
+  }
+);
+
+const bossHudFill =
+  document.createElement("div");
+
+Object.assign(
+  bossHudFill.style,
+  {
+    width: "100%",
+    height: "100%",
+    background:
+      "linear-gradient(90deg,#7b35b7,#e09cff,#ffffff)",
+    transition: "width .12s"
+  }
+);
+
+const bossHudHp =
+  document.createElement("div");
+
+Object.assign(
+  bossHudHp.style,
+  {
+    color: "#ffffff",
+    fontWeight: "800",
+    fontSize: "11px",
+    marginTop: "3px"
+  }
+);
+
+bossHudTrack.appendChild(
+  bossHudFill
+);
+
+bossHud.append(
+  bossHudName,
+  bossHudTrack,
+  bossHudHp
+);
+
+document.body.appendChild(
+  bossHud
+);
+
+function updateBossHUD() {
+  const boss =
+    S.enemies.find(
+      enemy =>
+        enemy.boss &&
+        enemy.hp > 0
+    );
+
+  if (!boss) {
+    bossHud.style.display =
+      "none";
+    return;
+  }
+
+  bossHud.style.display =
+    "block";
+
+  bossHudName.textContent =
+    boss.type;
+
+  bossHudFill.style.width =
+    Math.max(
+      0,
+      boss.hp / boss.maxHp * 100
+    ) + "%";
+
+  bossHudHp.textContent =
+    `${Math.max(0, Math.ceil(boss.hp)).toLocaleString()} / ` +
+    `${Math.ceil(boss.maxHp).toLocaleString()} HP`;
+}
+
 /* =========================
    AWAKENING UI
 ========================= */
@@ -1825,18 +1950,18 @@ function spawnMiniBoss() {
       Math.sin(angle) *
       distance,
 
-    hp: 420,
-    maxHp: 420,
+    hp: 3000,
+    maxHp: 3000,
 
-    r: 38,
+    r: 48,
 
-    speed: 32,
-    damage: 24,
+    speed: 28,
+    damage: 26,
 
     color: "#e09cff",
 
-    xp: 120,
-    essence: 8,
+    xp: 450,
+    essence: 25,
 
     ranged: true,
     dash: true,
@@ -3238,7 +3363,13 @@ function castSpell() {
           : 14,
 
       color:
-        magic.color
+        magic.color,
+
+      magicName:
+        S.selected,
+
+      traits:
+        [...magic.traits]
     });
   }
 
@@ -4294,6 +4425,7 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
 
   drawWorld();
   updateHUD();
+  updateBossHUD();
 
   requestAnimationFrame(
     update
@@ -4303,6 +4435,475 @@ if (typeof menuOpen !== "undefined" && menuOpen) {
 /* =========================
    DRAW WORLD
 ========================= */
+
+
+function projectileVisualType(
+  shot
+) {
+  const name =
+    shot.magicName || "";
+
+  const traits =
+    shot.traits || [];
+
+  if (
+    name === "Ice" ||
+    traits.includes("freeze") ||
+    traits.includes("cold")
+  ) return "ice";
+
+  if (
+    name === "Shadow" ||
+    traits.includes("dark") ||
+    traits.includes("drain")
+  ) return "shadow";
+
+  if (
+    name === "Lightning" ||
+    traits.includes("shock")
+  ) return "lightning";
+
+  if (
+    name === "Earth" ||
+    traits.includes("stone") ||
+    traits.includes("solid")
+  ) return "earth";
+
+  if (
+    name === "Wind" ||
+    traits.includes("air")
+  ) return "wind";
+
+  if (
+    name === "Water" ||
+    traits.includes("wet") ||
+    traits.includes("flow")
+  ) return "water";
+
+  if (
+    name === "Light" ||
+    traits.includes("radiant") ||
+    traits.includes("purify")
+  ) return "light";
+
+  if (
+    name === "Force" ||
+    traits.includes("impact") ||
+    traits.includes("push") ||
+    traits.includes("control")
+  ) return "force";
+
+  return "fire";
+}
+
+function drawSpellProjectile(
+  shot
+) {
+  const size =
+    S.awakened ? 12 : 9;
+
+  const angle =
+    Math.atan2(
+      shot.vy,
+      shot.vx
+    );
+
+  const type =
+    projectileVisualType(
+      shot
+    );
+
+  ctx.save();
+
+  ctx.translate(
+    shot.x,
+    shot.y
+  );
+
+  ctx.rotate(angle);
+
+  ctx.shadowBlur = 25;
+  ctx.shadowColor =
+    shot.color;
+
+  ctx.fillStyle =
+    shot.color;
+
+  ctx.strokeStyle =
+    shot.color;
+
+  ctx.lineWidth = 3;
+
+  if (type === "ice") {
+    ctx.beginPath();
+    ctx.moveTo(size * 1.8, 0);
+    ctx.lineTo(-size * .7, -size * .65);
+    ctx.lineTo(-size * .25, 0);
+    ctx.lineTo(-size * .7, size * .65);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = "#ffffffaa";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  else if (
+    type === "shadow"
+  ) {
+    ctx.globalAlpha = .85;
+
+    ctx.beginPath();
+    ctx.moveTo(size * 1.2, 0);
+    ctx.bezierCurveTo(
+      size * .25,
+      -size * 1.15,
+      -size * .7,
+      -size * .65,
+      -size * 1.35,
+      -size * .2
+    );
+    ctx.bezierCurveTo(
+      -size * .6,
+      0,
+      -size * 1.15,
+      size * .65,
+      -size * .25,
+      size * .8
+    );
+    ctx.bezierCurveTo(
+      size * .45,
+      size * .65,
+      size * .8,
+      size * .35,
+      size * 1.2,
+      0
+    );
+    ctx.fill();
+
+    ctx.globalAlpha = .35;
+    ctx.beginPath();
+    ctx.arc(
+      -size * .8,
+      0,
+      size * .75,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+
+  else if (
+    type === "lightning"
+  ) {
+    ctx.lineWidth =
+      S.awakened ? 5 : 4;
+
+    ctx.beginPath();
+    ctx.moveTo(-size * 1.5, 0);
+    ctx.lineTo(-size * .55, -size * .55);
+    ctx.lineTo(-size * .1, size * .25);
+    ctx.lineTo(size * .55, -size * .45);
+    ctx.lineTo(size * 1.55, 0);
+    ctx.stroke();
+
+    ctx.strokeStyle =
+      "#ffffff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  else if (
+    type === "earth"
+  ) {
+    ctx.beginPath();
+    ctx.moveTo(size * 1.15, 0);
+    ctx.lineTo(size * .45, size * .85);
+    ctx.lineTo(-size * .55, size * .7);
+    ctx.lineTo(-size * 1.1, size * .05);
+    ctx.lineTo(-size * .55, -size * .8);
+    ctx.lineTo(size * .45, -size * .65);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle =
+      "#ffffff55";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  else if (
+    type === "wind"
+  ) {
+    ctx.lineWidth =
+      S.awakened ? 5 : 3;
+
+    ctx.beginPath();
+    ctx.arc(
+      0,
+      0,
+      size,
+      -.85,
+      .85
+    );
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(
+      -size * .35,
+      0,
+      size * .7,
+      -.8,
+      .8
+    );
+    ctx.stroke();
+  }
+
+  else if (
+    type === "water"
+  ) {
+    ctx.beginPath();
+    ctx.moveTo(size * 1.25, 0);
+    ctx.bezierCurveTo(
+      size * .2,
+      -size * 1.1,
+      -size,
+      -size * .65,
+      -size * .9,
+      0
+    );
+    ctx.bezierCurveTo(
+      -size,
+      size * .65,
+      size * .2,
+      size * 1.1,
+      size * 1.25,
+      0
+    );
+    ctx.fill();
+
+    ctx.fillStyle =
+      "#ffffff77";
+    ctx.beginPath();
+    ctx.arc(
+      size * .2,
+      -size * .25,
+      size * .22,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+
+  else if (
+    type === "light"
+  ) {
+    ctx.beginPath();
+
+    for (
+      let i = 0;
+      i < 8;
+      i++
+    ) {
+      const a =
+        i * Math.PI / 4;
+
+      const r =
+        i % 2 === 0
+          ? size * 1.4
+          : size * .45;
+
+      const x =
+        Math.cos(a) * r;
+
+      const y =
+        Math.sin(a) * r;
+
+      if (i === 0)
+        ctx.moveTo(x, y);
+      else
+        ctx.lineTo(x, y);
+    }
+
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle =
+      "#ffffff";
+    ctx.beginPath();
+    ctx.arc(
+      0,
+      0,
+      size * .35,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+
+  else if (
+    type === "force"
+  ) {
+    ctx.lineWidth =
+      S.awakened ? 5 : 3;
+
+    ctx.beginPath();
+    ctx.arc(
+      0,
+      0,
+      size,
+      0,
+      Math.PI * 2
+    );
+    ctx.stroke();
+
+    ctx.globalAlpha = .45;
+    ctx.beginPath();
+    ctx.arc(
+      0,
+      0,
+      size * .55,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+
+  else {
+    /* FIRE */
+    ctx.beginPath();
+    ctx.moveTo(size * 1.35, 0);
+    ctx.bezierCurveTo(
+      size * .45,
+      -size * 1.05,
+      -size * .15,
+      -size * .55,
+      -size * 1.25,
+      -size * .85
+    );
+    ctx.bezierCurveTo(
+      -size * .85,
+      -size * .15,
+      -size * 1.35,
+      size * .15,
+      -size * .7,
+      size * .75
+    );
+    ctx.bezierCurveTo(
+      0,
+      size * 1.05,
+      size * .65,
+      size * .65,
+      size * 1.35,
+      0
+    );
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawArcaneSentinel(
+  enemy,
+  enemyColor
+) {
+  ctx.save();
+
+  ctx.translate(
+    enemy.x,
+    enemy.y
+  );
+
+  ctx.shadowBlur = 35;
+  ctx.shadowColor =
+    enemyColor;
+
+  /* floating lower crystal */
+  ctx.fillStyle =
+    enemyColor;
+
+  ctx.beginPath();
+  ctx.moveTo(0, 54);
+  ctx.lineTo(-15, 26);
+  ctx.lineTo(0, 8);
+  ctx.lineTo(15, 26);
+  ctx.closePath();
+  ctx.fill();
+
+  /* armored torso */
+  ctx.fillStyle =
+    "#321d4d";
+
+  ctx.beginPath();
+  ctx.moveTo(-34, -18);
+  ctx.lineTo(-23, 27);
+  ctx.lineTo(0, 42);
+  ctx.lineTo(23, 27);
+  ctx.lineTo(34, -18);
+  ctx.lineTo(0, -38);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle =
+    enemyColor;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  /* shoulders */
+  ctx.fillStyle =
+    "#5c337d";
+
+  ctx.beginPath();
+  ctx.moveTo(-30, -13);
+  ctx.lineTo(-57, -4);
+  ctx.lineTo(-43, 16);
+  ctx.lineTo(-22, 10);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(30, -13);
+  ctx.lineTo(57, -4);
+  ctx.lineTo(43, 16);
+  ctx.lineTo(22, 10);
+  ctx.closePath();
+  ctx.fill();
+
+  /* horned head */
+  ctx.fillStyle =
+    "#171020";
+
+  ctx.beginPath();
+  ctx.moveTo(-20, -35);
+  ctx.lineTo(-31, -62);
+  ctx.lineTo(-8, -50);
+  ctx.lineTo(0, -59);
+  ctx.lineTo(8, -50);
+  ctx.lineTo(31, -62);
+  ctx.lineTo(20, -35);
+  ctx.lineTo(0, -22);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle =
+    enemyColor;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  /* arcane core */
+  ctx.fillStyle =
+    "#ffffff";
+
+  ctx.beginPath();
+  ctx.moveTo(0, -8);
+  ctx.lineTo(10, 4);
+  ctx.lineTo(0, 17);
+  ctx.lineTo(-10, 4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
 
 function drawWorld() {
   ctx.clearRect(
@@ -4558,17 +5159,28 @@ function drawWorld() {
     ctx.fillStyle =
       enemyColor;
 
-    ctx.beginPath();
+    if (
+      enemy.boss
+    ) {
+      drawArcaneSentinel(
+        enemy,
+        enemyColor
+      );
+    }
 
-    ctx.arc(
-      enemy.x,
-      enemy.y,
-      enemy.r,
-      0,
-      Math.PI * 2
-    );
+    else {
+      ctx.beginPath();
 
-    ctx.fill();
+      ctx.arc(
+        enemy.x,
+        enemy.y,
+        enemy.r,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.fill();
+    }
 
     if (
       enemy.elite ||
@@ -4582,7 +5194,9 @@ function drawWorld() {
           ? 4
           : 2;
 
-      ctx.stroke();
+      if (!enemy.boss) {
+        ctx.stroke();
+      }
     }
 
     if (
@@ -4678,25 +5292,9 @@ function drawWorld() {
   for (
     const shot of S.shots
   ) {
-    ctx.shadowBlur = 25;
-
-    ctx.shadowColor =
-      shot.color;
-
-    ctx.fillStyle =
-      shot.color;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      shot.x,
-      shot.y,
-      S.awakened ? 10 : 8,
-      0,
-      Math.PI * 2
+    drawSpellProjectile(
+      shot
     );
-
-    ctx.fill();
   }
 
   /* ENEMY SHOTS */
