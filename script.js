@@ -66,6 +66,7 @@ function connectMultiplayer(roomCode) {
 
   multiplayerPlayers.clear();
   multiplayerRoom = code;
+  if (typeof v18ChatReset === "function") v18ChatReset(code);
 
   multiplayerChannel =
     supabaseClient.channel(
@@ -128,6 +129,9 @@ function connectMultiplayer(roomCode) {
         );
       }
     )
+    .on("broadcast", {event:"room-chat"}, ({payload}) => {
+      if (typeof v18ReceiveChat === "function") v18ReceiveChat(payload);
+    })
     .subscribe(
       (status, error) => {
         console.log(
@@ -6361,6 +6365,9 @@ mainMenu.innerHTML = `
 
     <button id="menuCustomization" class="menuButton">CUSTOMIZATION</button>
     <button id="menuRankRewards" class="menuButton">RANK REWARDS</button>
+    <button id="menuChat" class="menuButton">ROOM CHAT</button>
+    <button id="menuAccount" class="menuButton">ACCOUNT</button>
+    <button id="menuAdmin" class="menuButton">OWNER PANEL</button>
     <button id="menuSettings" class="menuButton">SETTINGS</button>
 
     <div class="menuVersion">
@@ -7053,6 +7060,9 @@ function v18Open(title) {
   if (title === "SETTINGS") v18Settings();
   if (title === "CUSTOMIZATION") v18Customization();
   if (title === "RANK REWARDS") v18Rewards();
+  if (title === "ROOM CHAT") v18ShowChat(true);
+  if (title === "ACCOUNT") v18ShowAccount();
+  if (title === "OWNER PANEL") v18ShowAdmin();
 }
 document.getElementById("v18Back").addEventListener("click", () => {
   v18Panel.style.display = "none";
@@ -7179,6 +7189,109 @@ function v18DrawTrimAndTitle(x,y) {
   }
   ctx.restore();
 }
+
+/* V1.8 ROOM CHAT + ACCOUNT + SERVER-VERIFIED OWNER TITLE GRANTS.
+   Chat broadcasts are ephemeral and visible to everyone with the room code.
+   Owner permissions and title grants MUST be checked by the SQL RPC, never JS. */
+const v18ChatLog=[];
+const v18ChatBlocked=new Set();
+const v18ChatMuted=new Set();
+let v18ChatLastSent=0;
+let v18ChatName="Guest-"+multiplayerId.slice(0,5);
+let v18ChatHidden=false;
+const v18ChatUI=document.createElement("aside");
+v18ChatUI.id="v18ChatUI";
+v18ChatUI.style.cssText="position:fixed;right:10px;bottom:84px;width:min(320px,calc(100vw - 20px));max-height:35vh;z-index:65;background:#101426ee;border:1px solid #7363a3;border-radius:12px;color:white;font:12px system-ui;display:none;flex-direction:column;overflow:hidden";
+v18ChatUI.innerHTML=`<button id="v18ChatCollapse" style="background:#292d50;color:white;border:0;padding:7px">ROOM CHAT ▾</button><div id="v18ChatInner"><div id="v18ChatFeed" role="log" aria-live="polite" style="height:100px;overflow:auto;padding:7px;overflow-wrap:anywhere"></div><form id="v18ChatForm" style="display:flex;padding:5px;gap:4px"><input id="v18ChatInput" maxlength="160" autocomplete="off" aria-label="Chat message" placeholder="Message (160 max)" style="min-width:0;flex:1;background:#20263e;color:white;border:1px solid #5a6386;border-radius:6px;padding:7px"><button style="background:#343e76;color:white;border:0;border-radius:6px">SEND</button></form></div>`;
+document.body.appendChild(v18ChatUI);
+const v18ChatFeed=document.getElementById("v18ChatFeed");
+function v18ChatReset(code){v18ChatLog.length=0;v18ChatFeed.replaceChildren();v18ChatUI.style.display="flex";v18ChatAdd({id:"system",name:"Room",text:`Connected to ${code}`});}
+function v18ChatAdd(msg){
+  if(v18ChatBlocked.has(msg.id)||v18ChatMuted.has(msg.id))return;
+  v18ChatLog.push(msg);if(v18ChatLog.length>80)v18ChatLog.shift();
+  const row=document.createElement("div");row.style.cssText="margin:5px 0;border-bottom:1px solid #33394e;padding-bottom:4px";
+  const who=document.createElement("b");who.textContent=msg.name+": ";
+  const body=document.createElement("span");body.textContent=msg.text;
+  row.append(who,body);
+  if(msg.id!==multiplayerId&&msg.id!=="system"){
+    const controls=document.createElement("button");controls.textContent="⋯";controls.title="Chat controls";
+    controls.style.cssText="float:right;background:#282e48;color:white;border:0";
+    controls.addEventListener("click",()=>{
+      const choice=prompt("Type M to mute, B to block, or R to report this player. No personal information.","M");
+      if(!choice)return;
+      const action=choice.trim().toUpperCase();
+      if(action==="M")v18ChatMuted.add(msg.id);
+      if(action==="B")v18ChatBlocked.add(msg.id);
+      if(action==="R")notice("REPORT NOT SUBMITTED: MODERATION SERVICE NOT CONNECTED");
+      if(action==="M"||action==="B")v18ChatRender();
+    });row.append(controls);
+  }
+  v18ChatFeed.append(row);while(v18ChatFeed.children.length>80)v18ChatFeed.firstChild.remove();
+  v18ChatFeed.scrollTop=v18ChatFeed.scrollHeight;
+}
+function v18ChatRender(){v18ChatFeed.replaceChildren();const copy=[...v18ChatLog];v18ChatLog.length=0;copy.forEach(v18ChatAdd);}
+function v18ReceiveChat(p){
+  if(!p||typeof p.id!=="string"||p.id===multiplayerId||typeof p.text!=="string"||typeof p.name!=="string")return;
+  const text=p.text.trim().slice(0,160),name=p.name.trim().slice(0,24);
+  if(!text||!name||v18ChatBlocked.has(p.id))return;
+  v18ChatAdd({id:p.id.slice(0,64),name,text});
+}
+async function v18SendChat(text){
+  text=String(text).trim().slice(0,160);
+  if(!text||!multiplayerChannel||!multiplayerRoom){notice("JOIN A ROOM TO CHAT");return;}
+  if(Date.now()-v18ChatLastSent<2500){notice("CHAT: WAIT 2.5 SECONDS");return;}
+  v18ChatLastSent=Date.now();
+  const payload={id:multiplayerId,name:v18ChatName,text};
+  try{const status=await multiplayerChannel.send({type:"broadcast",event:"room-chat",payload});
+    if(status==="ok")v18ChatAdd(payload);else notice("CHAT SEND FAILED");
+  }catch(_){notice("CHAT SEND FAILED");}
+}
+document.getElementById("v18ChatForm").addEventListener("submit",e=>{e.preventDefault();const input=document.getElementById("v18ChatInput");v18SendChat(input.value);input.value="";});
+document.getElementById("v18ChatCollapse").addEventListener("click",()=>{v18ChatHidden=!v18ChatHidden;document.getElementById("v18ChatInner").style.display=v18ChatHidden?"none":"block";});
+function v18ShowChat(full){
+  v18Body.replaceChildren();
+  const status=document.createElement("p");status.textContent=multiplayerRoom?`Room: ${multiplayerRoom}`:"Join a multiplayer room to chat.";v18Body.append(status);
+  const log=document.createElement("div");log.style.cssText="height:220px;overflow:auto;border:1px solid #414766;border-radius:8px;padding:8px;overflow-wrap:anywhere";
+  const refresh=()=>{log.replaceChildren();v18ChatLog.filter(m=>!v18ChatBlocked.has(m.id)&&!v18ChatMuted.has(m.id)).forEach(m=>{const line=document.createElement("p");line.textContent=m.name+": "+m.text;log.append(line);});log.scrollTop=log.scrollHeight;};
+  refresh();v18Body.append(log);
+  const form=document.createElement("form");form.style.cssText="display:flex;gap:5px;margin-top:10px";
+  const input=document.createElement("input");input.maxLength=160;input.placeholder="Message";input.style.cssText="flex:1;min-width:0;padding:9px";
+  const send=document.createElement("button");send.textContent="SEND";send.className="menuButton";send.style.width="auto";form.append(input,send);v18Body.append(form);
+  form.addEventListener("submit",e=>{e.preventDefault();v18SendChat(input.value);input.value="";setTimeout(refresh,200);});
+  const hint=document.createElement("p");hint.style.fontSize="12px";hint.textContent="Room chat is public to anyone with the room code. Do not share personal details. Mute/block work on this device; reporting needs a moderation backend.";v18Body.append(hint);
+}
+let v18Account=null;
+async function v18RefreshAccount(){if(!supabaseClient)return null;try{const {data}=await supabaseClient.auth.getUser();v18Account=data.user||null;}catch(_){v18Account=null;}if(v18Account)v18ChatName="Player-"+v18Account.id.slice(0,5);return v18Account;}
+function v18ShowAccount(){
+  v18Body.innerHTML=`<p id="v18AuthStatus">Checking account…</p><form id="v18AuthForm"><input id="v18AuthEmail" type="email" autocomplete="email" required placeholder="Email" style="width:100%;padding:10px;margin:5px 0"><input id="v18AuthPassword" type="password" autocomplete="current-password" required minlength="8" placeholder="Password" style="width:100%;padding:10px;margin:5px 0"><button class="menuButton" type="submit" style="width:100%">SIGN IN</button></form><button id="v18AuthSignup" class="menuButton" style="width:100%">CREATE ACCOUNT</button><button id="v18AuthSignout" class="menuButton" style="width:100%">SIGN OUT</button><p style="font-size:12px;color:#adb5d5">Guest play remains available. Accounts require Supabase Auth email/password to be enabled. Do not enter a password in chat.</p>`;
+  const status=document.getElementById("v18AuthStatus");
+  const update=async()=>{await v18RefreshAccount();status.textContent=v18Account?`Signed in: ${v18Account.email}`:"Playing as guest";};update();
+  const auth=async(signup)=>{if(!supabaseClient){status.textContent="Supabase is not connected";return;}
+    const email=document.getElementById("v18AuthEmail").value,password=document.getElementById("v18AuthPassword").value;
+    if(!email||password.length<8){status.textContent="Enter an email and password (8+ characters)";return;}
+    const result=signup?await supabaseClient.auth.signUp({email,password}):await supabaseClient.auth.signInWithPassword({email,password});
+    status.textContent=result.error?result.error.message:(signup?"Account created. Check email if confirmation is required.":"Signed in.");
+    document.getElementById("v18AuthPassword").value="";await v18RefreshAccount();
+  };
+  document.getElementById("v18AuthForm").addEventListener("submit",e=>{e.preventDefault();auth(false);});
+  document.getElementById("v18AuthSignup").addEventListener("click",()=>auth(true));
+  document.getElementById("v18AuthSignout").addEventListener("click",async()=>{if(supabaseClient)await supabaseClient.auth.signOut();v18Account=null;v18ChatName="Guest-"+multiplayerId.slice(0,5);status.textContent="Playing as guest";});
+}
+async function v18ShowAdmin(){
+  v18Body.replaceChildren();const status=document.createElement("p");status.textContent="Verifying owner permission…";v18Body.append(status);
+  if(!supabaseClient||!await v18RefreshAccount()){status.textContent="Sign in to check owner access.";return;}
+  const check=await supabaseClient.rpc("af_is_owner");
+  if(check.error||check.data!==true){status.textContent="Owner access unavailable for this account. Apply the included SQL setup to enable server-verified permissions.";return;}
+  status.textContent="OWNER PANEL — title grants are checked by the database.";
+  const form=document.createElement("form");form.innerHTML=`<label>Player account UUID<input id="v18GrantPlayer" required placeholder="Player UUID" style="width:100%;padding:10px;margin:6px 0"></label><label>Title<input id="v18GrantTitle" required maxlength="40" placeholder="Title" style="width:100%;padding:10px;margin:6px 0"></label><button class="menuButton" style="width:100%">GRANT TITLE</button>`;v18Body.append(form);
+  form.addEventListener("submit",async e=>{e.preventDefault();const player=document.getElementById("v18GrantPlayer").value.trim(),title=document.getElementById("v18GrantTitle").value.trim();
+    const {error}=await supabaseClient.rpc("af_grant_title",{target_user:player,grant_title:title});status.textContent=error?`Grant failed: ${error.message}`:"Title granted on server.";
+  });
+}
+document.getElementById("menuChat").addEventListener("click",()=>v18Open("ROOM CHAT"));
+document.getElementById("menuAccount").addEventListener("click",()=>v18Open("ACCOUNT"));
+document.getElementById("menuAdmin").addEventListener("click",()=>v18Open("OWNER PANEL"));
+
 document.getElementById("menuSettings").addEventListener("click", () => v18Open("SETTINGS"));
 document.getElementById("menuCustomization").addEventListener("click", () => v18Open("CUSTOMIZATION"));
 document.getElementById("menuRankRewards").addEventListener("click", () => v18Open("RANK REWARDS"));
@@ -7208,7 +7321,7 @@ renderTree();
 updateHUD();
 
 notice(
-  "ARCANE FORGE v1.8 — BUILD 2"
+  "ARCANE FORGE v1.8 — BUILD 3"
 );
 
 requestAnimationFrame(
