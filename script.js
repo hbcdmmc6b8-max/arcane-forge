@@ -4905,6 +4905,144 @@ function drawArcaneSentinel(
   ctx.restore();
 }
 
+/* =========================
+   V1.6 ELEMENT PLAYER SHAPES
+========================= */
+
+function playerElement(magicName) {
+  const magic = S.magic[magicName] || S.magic.Fire;
+  const parents = magic.parents || [];
+  const schools = ["Fire", "Water", "Wind", "Earth", "Lightning", "Ice", "Light", "Shadow", "Force"];
+  const elements = parents.length
+    ? parents.flatMap(parent => {
+        const m = S.magic[parent];
+        return m && m.parents && m.parents.length ? m.parents : [parent];
+      })
+    : [magicName];
+  const unique = [...new Set(elements.filter(name => schools.includes(name)))];
+  return { primary: unique[0] || "Fire", secondary: unique[1] || null,
+    tertiary: unique[2] || null, color: magic.color };
+}
+
+function drawPlayerElement(x, y, magicName, awakened = false) {
+  const element = playerElement(magicName);
+  const r = awakened ? 17 : 14;
+  const t = performance.now() * .001;
+  const c = element.color;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.shadowBlur = awakened ? 50 : 30;
+  ctx.shadowColor = c;
+  ctx.fillStyle = c;
+  ctx.strokeStyle = "#f5f1ff";
+  ctx.lineWidth = 2;
+
+  function polygon(points) {
+    ctx.beginPath();
+    points.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  function ring(radius, alpha = .65) {
+    ctx.save(); ctx.globalAlpha = alpha;
+    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+  function shard(px, py, size) {
+    polygon([[px, py-size], [px+size*.55, py], [px, py+size], [px-size*.55, py]]);
+  }
+  function accessory(type, scale = 1) {
+    ctx.save(); ctx.scale(scale, scale);
+    if (type === "Fire") {
+      for (let i = -1; i <= 1; i++) {
+        const px = i * 12;
+        polygon([[px-5,-r+3],[px-4,-r-9],[px+2,-r-17-(i===0?5:0)],
+          [px+6,-r-7],[px+5,-r+3]]);
+      }
+    } else if (type === "Water") {
+      ctx.beginPath(); ctx.ellipse(0, 0, r+8, r*.42, -.35, 0, Math.PI*2); ctx.stroke();
+      shard(r+8, -r-7, 4);
+    } else if (type === "Wind") {
+      ctx.beginPath(); ctx.arc(0, 0, r+9, -.8+t*.3, 1.1+t*.3); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, r+13, 2.3-t*.2, 4.1-t*.2); ctx.stroke();
+    } else if (type === "Earth") {
+      for (const [px,py] of [[-r-9,-r],[r+9,-r+3],[0,r+12]])
+        polygon([[px-5,py-4],[px+4,py-7],[px+7,py+3],[px-3,py+6]]);
+    } else if (type === "Lightning") {
+      for (const side of [-1,1]) {
+        ctx.beginPath(); ctx.moveTo(side*(r-2),-r-6);
+        ctx.lineTo(side*(r+10),-r+1); ctx.lineTo(side*(r+3),-r+6);
+        ctx.lineTo(side*(r+13),r+5); ctx.stroke();
+      }
+    } else if (type === "Ice") {
+      for (const a of [-Math.PI/2, Math.PI/6, 5*Math.PI/6])
+        shard(Math.cos(a)*(r+9), Math.sin(a)*(r+9), 6);
+    } else if (type === "Light") {
+      ctx.beginPath(); ctx.ellipse(0,-r-10,r+5,4,0,0,Math.PI*2); ctx.stroke();
+      shard(0,-r-20,5);
+    } else if (type === "Shadow") {
+      for (const side of [-1,1]) {
+        ctx.beginPath(); ctx.moveTo(side*r,-r*.4);
+        ctx.quadraticCurveTo(side*(r+19),-r-10,side*(r+9),-r-23);
+        ctx.quadraticCurveTo(side*(r+3),-r-6,side*(r+3),r*.6);
+        ctx.fill();
+      }
+    } else if (type === "Force") {
+      ring(r+8); ring(r+13,.3);
+      shard(0,-r-13,4);
+    }
+    ctx.restore();
+  }
+
+  switch (element.primary) {
+    case "Fire":
+      polygon([[r+3,2],[r*.55,r*.75],[-r*.5,r*.85],[-r-2,1],
+        [-r*.55,-r*.4],[-r*.7,-r-5],[0,-r*.8],[r*.3,-r-9],[r*.7,-r*.45]]);
+      break;
+    case "Water":
+      polygon([[0,-r-4],[r*.85,-r*.1],[r*.75,r*.6],[0,r+2],[-r*.75,r*.6],[-r*.85,-r*.1]]);
+      break;
+    case "Wind":
+      ctx.beginPath(); ctx.arc(0,0,r,-1.15,1.3); ctx.arc(-r*.32,0,r*.63,1.3,-1.15,true);
+      ctx.closePath(); ctx.fill(); ctx.stroke(); break;
+    case "Earth":
+      polygon([[0,-r-3],[r*.85,-r*.6],[r+2,r*.4],[r*.3,r+3],[-r*.7,r*.8],[-r-2,-r*.2]]);
+      break;
+    case "Lightning":
+      polygon([[r*.15,-r-4],[-r*.8,1],[-r*.1,1],[-r*.4,r+5],[r*.85,-r*.15],[r*.1,-r*.15]]);
+      break;
+    case "Ice": shard(0,0,r+3); break;
+    case "Light":
+      polygon(Array.from({length: 10},(_,i)=>{
+        const a=-Math.PI/2+i*Math.PI/5, rr=i%2===0?r+4:r*.55;
+        return [Math.cos(a)*rr,Math.sin(a)*rr];
+      })); break;
+    case "Shadow":
+      ctx.beginPath(); ctx.moveTo(0,-r-4);
+      ctx.bezierCurveTo(r*1.5,-r*.3,r*.7,r*.3,r*.8,r);
+      ctx.quadraticCurveTo(0,r*.4,-r*.7,r+3);
+      ctx.bezierCurveTo(-r*.8,r*.2,-r*1.5,-r*.5,0,-r-4);
+      ctx.fill(); ctx.stroke(); break;
+    case "Force":
+      polygon(Array.from({length:6},(_,i)=>{
+        const a=Math.PI/6+i*Math.PI/3;
+        return [Math.cos(a)*(r+2),Math.sin(a)*(r+2)];
+      })); break;
+  }
+  ctx.fillStyle = "#ffffffbb";
+  ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = c; ctx.strokeStyle = c;
+  accessory(element.primary);
+  if (element.secondary) {
+    ctx.save(); ctx.rotate(t*.3); accessory(element.secondary,.78); ctx.restore();
+  }
+  if (element.tertiary) {
+    ctx.save(); ctx.rotate(-t*.25); accessory(element.tertiary,.58); ctx.restore();
+  }
+  ctx.restore();
+}
+
 function drawWorld() {
   ctx.clearRect(
     0,
@@ -5369,25 +5507,11 @@ function drawWorld() {
         ? remoteMagic.color
         : "#8fd3ff";
 
-    ctx.shadowBlur = 24;
-    ctx.shadowColor = playerColor;
-    ctx.fillStyle = "#dff6ff";
-
-    ctx.beginPath();
-    ctx.arc(
+    drawPlayerElement(
       player.x,
       player.y,
-      14,
-      0,
-      Math.PI * 2
+      player.magic || "Fire"
     );
-    ctx.fill();
-
-    ctx.strokeStyle = playerColor;
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
 
     ctx.fillStyle =
       "rgba(20,8,18,.9)";
@@ -5477,40 +5601,12 @@ function drawWorld() {
       ctx.stroke();
     }
 
-    ctx.shadowBlur =
-      S.awakened
-        ? 50
-        : 30;
-
-    ctx.shadowColor =
-      playerColor;
-
-    ctx.fillStyle =
-      "#f5f1ff";
-
-    ctx.beginPath();
-
-    ctx.arc(
+    drawPlayerElement(
       S.x,
       S.y,
-      S.awakened ? 17 : 14,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fill();
-
-    ctx.strokeStyle =
-      playerColor;
-
-    ctx.lineWidth =
+      S.selected,
       S.awakened
-        ? 5
-        : 3;
-
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
+    );
 
     if (
       S.ward > 0
