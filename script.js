@@ -826,7 +826,7 @@ Object.assign(
   {
     position: "fixed",
     left: "50%",
-    top: "76px",
+    top: "125px",
     transform: "translateX(-50%)",
     width: "min(520px, 72vw)",
     zIndex: "56",
