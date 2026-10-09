@@ -485,6 +485,18 @@ const recipes = {
     ["Celestial Sand","#eadf9c",["stone","radiant","air","speed","purify"]]
 };
 
+/* Normalize recipe keys so every listed fusion is reachable regardless
+   of the order in which its ingredients were authored. */
+for (const [recipeKey, recipeResult] of Object.entries(recipes)) {
+  const normalizedKey = recipeKey.split("+").sort().join("+");
+  if (normalizedKey !== recipeKey) {
+    if (!Object.prototype.hasOwnProperty.call(recipes, normalizedKey)) {
+      recipes[normalizedKey] = recipeResult;
+    }
+    delete recipes[recipeKey];
+  }
+}
+
 /* =========================
    STATE
 ========================= */
