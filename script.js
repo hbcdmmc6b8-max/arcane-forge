@@ -1647,6 +1647,7 @@ function burst(
   life = 25,
   speedBoost = 1
 ) {
+  amount=Math.min(amount,Math.max(0,260-S.particles.length),navigator.hardwareConcurrency<=4?12:28);
   for (
     let i = 0;
     i < amount;
@@ -3320,13 +3321,113 @@ respawnButton.addEventListener(
    NORMAL COMBAT
 ========================= */
 
+
+/* ARCANE FORGE v1.9: editable magic, elemental combat and performance guardrails */
+const af19Elements={
+ Fire:{damage:24,trait:"burn",color:"#ff683b"},Water:{damage:18,trait:"wet",color:"#4cbaff"},
+ Wind:{damage:17,trait:"push",color:"#9de6c5"},Earth:{damage:34,trait:"armor",color:"#d6a26c"},
+ Lightning:{damage:29,trait:"shock",color:"#e6d75b"},Ice:{damage:20,trait:"freeze",color:"#a6e9ff"},
+ Light:{damage:25,trait:"pierce",color:"#ffeab0"},Shadow:{damage:26,trait:"weaken",color:"#9470c9"},
+ Force:{damage:23,trait:"push",color:"#ecb5ff"},Nature:{damage:19,trait:"root",color:"#7be395"},
+ Poison:{damage:15,trait:"poison",color:"#9bd85e"}
+};
+const af19Shapes=["projectile","beam","slash","burst","orb","wave"];
+const af19Traits=["burn","wet","push","armor","shock","freeze","pierce","weaken","root","poison","chain","heal"];
+function af19ElementsFor(magicName){
+ const magic=S.magic[magicName]||{};
+ const parents=magic.parents||[];
+ const names=[magic.element,magicName,...parents];
+ return [...new Set(names.filter(n=>af19Elements[n]))];
+}
+function af19Hit(enemy,shot){
+ const magic=S.magic[shot.magicName]||{};
+ const elements=af19ElementsFor(shot.magicName);
+ const primary=af19Elements[magic.element]||af19Elements[elements[0]]||{damage:22,trait:"push"};
+ const traits=[...new Set([primary.trait,...elements.map(e=>af19Elements[e].trait),...(magic.customTraits||[])])];
+ const power=Math.max(0.25,Math.min(3,Number(magic.powerMultiplier)||1));
+ const damage=Math.round(primary.damage*power*(S.awakened?1.3:1));
+ hurtEnemy(enemy,damage,shot.color);
+ const now=performance.now();
+ enemy.af19Status=enemy.af19Status||{};
+ for(const trait of traits){
+  if(trait==="burn"||trait==="poison")enemy.af19Status[trait]={until:now+3500,next:now+650};
+  if(trait==="wet")enemy.af19Status.wet={until:now+4000};
+  if(trait==="shock"){if(enemy.af19Status.wet?.until>now)hurtEnemy(enemy,9,null);enemy.af19Status.stun={until:now+350};}
+  if(trait==="freeze")enemy.af19Status.slow={until:now+(enemy.af19Status.wet?.until>now?1900:950)};
+  if(trait==="root")enemy.af19Status.slow={until:now+1600};
+  if(trait==="weaken")enemy.af19Status.weaken={until:now+2500};
+  if(trait==="armor")enemy.shield=Math.max(0,(enemy.shield||0)-12);
+  if(trait==="push"){const d=Math.hypot(enemy.x-S.x,enemy.y-S.y)||1;enemy.x+=(enemy.x-S.x)/d*18;enemy.y+=(enemy.y-S.y)/d*18;}
+  if(trait==="heal")S.hp=Math.min(100,S.hp+2);
+ }
+ if(traits.includes("chain")||traits.includes("shock")){
+  let chained=0;
+  for(const other of S.enemies){
+   if(other===enemy||other.hp<=0||Math.hypot(other.x-enemy.x,other.y-enemy.y)>110)continue;
+   hurtEnemy(other,Math.round(damage*.3),null);
+   if(++chained>=2)break;
+  }
+ }
+}
+let af19StatusClock=0;
+function af19Tick(delta){
+ af19StatusClock+=delta;
+ if(af19StatusClock<.12)return;
+ af19StatusClock=0;
+ const now=performance.now();
+ for(const enemy of S.enemies){
+  const states=enemy.af19Status;if(!states)continue;
+  for(const type of ["burn","poison"]){
+   const state=states[type];
+   if(state&&state.until>now&&state.next<=now){hurtEnemy(enemy,type==="burn"?3:2,null);state.next=now+650;}
+  }
+ }
+}
+function af19MakeCreator(){
+ const modal=document.createElement("div");
+ modal.id="af19Creator";
+ modal.style.cssText="position:fixed;inset:4%;z-index:99999;background:#0b1021;color:#fff;border:1px solid #8769ce;border-radius:16px;overflow:auto;padding:18px;display:none;font:14px system-ui";
+ modal.innerHTML='<h2>ARCANE FORGE • CUSTOM SPELL CREATOR</h2><p>Design and save a spell to your Grimoire. Stronger spells consume more mana.</p><div id="af19Fields" style="display:grid;gap:9px"></div><p id="af19Preview"></p><button id="af19Save">SAVE MAGIC</button> <button id="af19Close">CLOSE</button>';
+ document.body.append(modal);
+ const fields=modal.querySelector("#af19Fields");
+ function input(label,type,options){
+  const wrap=document.createElement("label");wrap.textContent=label+" ";
+  const el=document.createElement(type==="select"?"select":"input");
+  el.style.cssText="display:block;width:100%;padding:10px;background:#1b2540;color:white;border:1px solid #6877a4;border-radius:8px;box-sizing:border-box";
+  if(type==="select")options.forEach(v=>el.add(new Option(v,v)));else{el.type=type;el.maxLength=type==="text"?36:undefined;}
+  wrap.append(el);fields.append(wrap);return el;
+ }
+ const name=input("Magic name","text");name.placeholder="My custom spell";
+ const element=input("Primary element","select",Object.keys(af19Elements));
+ const secondary=input("Secondary element","select",["None",...Object.keys(af19Elements)]);
+ const shape=input("Attack appearance / type","select",af19Shapes);
+ const trait=input("Extra trait","select",["None",...af19Traits]);
+ const color=input("Effect color","color");color.value="#a78bfa";
+ const power=input("Power multiplier (0.5 to 3)","number");power.min=".5";power.max="3";power.step=".1";power.value="1";
+ const awaken=input("Awakening name","text");awaken.placeholder="Ascended form";
+ const duration=input("Awakening duration (seconds)","number");duration.min="3";duration.max="30";duration.value="12";
+ const preview=modal.querySelector("#af19Preview");
+ function refresh(){preview.textContent="Preview: "+(name.value||"Unnamed")+" • "+shape.value+" • "+element.value+" • "+trait.value+" • Mana cost scales with power.";}
+ fields.addEventListener("input",refresh);refresh();
+ modal.querySelector("#af19Close").onclick=()=>modal.style.display="none";
+ modal.querySelector("#af19Save").onclick=()=>{
+  const n=name.value.trim();if(!n||n.length>36){notice("Choose a magic name");return;}
+  if(af19Elements[n]||S.magic[n]&&!S.magic[n].custom){notice("Name is reserved");return;}
+  if(Object.keys(S.magic).filter(k=>S.magic[k].custom).length>=60&&!S.magic[n]){notice("60 custom spells maximum");return;}
+  const p=Math.max(.5,Math.min(3,Number(power.value)||1));
+  S.magic[n]={color:color.value,traits:[af19Elements[element.value].trait],parents:secondary.value==="None"?[element.value]:[element.value,secondary.value],element:element.value,custom:true,customTraits:trait.value==="None"?[]:[trait.value],attackType:shape.value,powerMultiplier:p,awakeningName:awaken.value.slice(0,36),awakeningDuration:Math.max(3,Math.min(30,Number(duration.value)||12))};
+  S.selected=n;saveGame();renderForge();updateHUD();notice("Custom magic forged: "+n);modal.style.display="none";
+ };
+ const open=document.createElement("button");open.textContent="CUSTOM MAGIC";open.style.cssText="position:fixed;left:10px;bottom:68px;z-index:1000;padding:10px;background:#50318d;color:white;border:1px solid #aa8fe0;border-radius:10px";
+ open.onclick=()=>{name.value="";modal.style.display="block";refresh();};document.body.append(open);
+}
+af19MakeCreator();
+
 function castSpell() {
   if (S.dead) return;
 
-  const cost =
-    S.awakened
-      ? 7
-      : 10;
+  const customMagic=S.magic[S.selected]||{};
+  const cost=Math.ceil((S.awakened?7:10)*Math.max(.5,Math.min(3,Number(customMagic.powerMultiplier)||1)));
 
   if (
     S.mana < cost
@@ -3444,6 +3545,7 @@ function castSpell() {
         S.awakened
           ? 18
           : 14,
+      attackType:magic.attackType||'projectile',
 
       color:
         magic.color,
@@ -3752,6 +3854,7 @@ if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "u
     );
     
   previousTime = time;
+  af19Tick(delta);
 
   if (
     multiplayerChannel &&
@@ -4412,11 +4515,7 @@ if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "u
           distance <
           enemy.r + 8
         ) {
-          hurtEnemy(
-            enemy,
-            shot.power,
-            shot.color
-          );
+          af19Hit(enemy,shot);
           impactVfx(shot.x,shot.y,shot.color,shot.magicName);
           if (performance.now()-lastImpactSound>100) {
             lastImpactSound=performance.now();
