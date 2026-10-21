@@ -1,4 +1,4 @@
-const CACHE const CACHE = "arcane-forge-v1.7";
+const CACHE = "arcane-forge-v1.9";
 
 const ASSETS = [
   "./",
