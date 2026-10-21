@@ -1647,6 +1647,7 @@ function burst(
   life = 25,
   speedBoost = 1
 ) {
+  amount = Math.min(amount, Math.max(0, 280 - S.particles.length));
   for (
     let i = 0;
     i < amount;
@@ -3320,6 +3321,51 @@ respawnButton.addEventListener(
    NORMAL COMBAT
 ========================= */
 
+
+// v1.9 elemental combat: status effects remain local to the current match.
+const afElementStats = Object.freeze({
+ Fire:{damage:24,trait:"burn"},Water:{damage:18,trait:"wet"},
+ Lightning:{damage:29,trait:"shock"},Ice:{damage:20,trait:"freeze"},
+ Wind:{damage:17,trait:"knockback"},Earth:{damage:34,trait:"armorbreak"},
+ Nature:{damage:19,trait:"root"},Shadow:{damage:26,trait:"weaken"},
+ Light:{damage:25,trait:"pierce"},Poison:{damage:15,trait:"poison"},
+ Force:{damage:23,trait:"knockback"}
+});
+function afElementForMagic(magic) {
+ const names=[magic,...(S.magic[magic]?.parents||[])];
+ return names.find(n=>afElementStats[n])||"Force";
+}
+function afApplyElement(enemy,shot) {
+ const element=afElementForMagic(shot.magicName);
+ const status=enemy.afStatus||(enemy.afStatus={});
+ const now=performance.now();
+ if(element==="Fire"||element==="Poison"){
+   status.dotUntil=now+(element==="Fire"?3000:5000);
+   status.dotDamage=element==="Fire"?3:2;
+   status.dotNext=now+500;
+ }
+ if(element==="Water") status.wetUntil=now+4000;
+ if(element==="Ice") status.slowUntil=now+2500;
+ if(element==="Nature") status.rootUntil=now+700;
+ if(element==="Shadow") status.weakUntil=now+3000;
+ if(element==="Lightning"&&status.wetUntil>now) hurtEnemy(enemy,10,shot.color);
+ if(element==="Earth") enemy.shield=Math.max(0,(enemy.shield||0)-12);
+ if(element==="Wind"||element==="Force"){
+   const len=Math.hypot(shot.vx,shot.vy)||1;
+   enemy.x+=shot.vx/len*14;enemy.y+=shot.vy/len*14;
+ }
+}
+function afTickElements(now){
+ for(const enemy of S.enemies){
+   const st=enemy.afStatus;
+   if(!st)continue;
+   if(st.dotUntil>now&&st.dotNext<=now){
+     hurtEnemy(enemy,st.dotDamage||2,null);
+     st.dotNext=now+500;
+   }
+ }
+}
+
 function castSpell() {
   if (S.dead) return;
 
@@ -3441,9 +3487,7 @@ function castSpell() {
           : 65,
 
       power:
-        S.awakened
-          ? 18
-          : 14,
+        (afElementStats[afElementForMagic(S.selected)]?.damage || 23) * (S.awakened ? 1.3 : 1),
 
       color:
         magic.color,
@@ -4417,6 +4461,7 @@ if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "u
             shot.power,
             shot.color
           );
+          afApplyElement(enemy,shot);
           impactVfx(shot.x,shot.y,shot.color,shot.magicName);
           if (performance.now()-lastImpactSound>100) {
             lastImpactSound=performance.now();
@@ -4431,6 +4476,8 @@ if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "u
         }
       }
     }
+
+    afTickElements(performance.now());
 
     /* DEFEATED */
 
