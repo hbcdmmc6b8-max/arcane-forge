@@ -47,7 +47,7 @@ function makeRoomCode() {
   return code;
 }
 
-function connectMultiplayer(roomCode) {
+async function connectMultiplayer(roomCode) {
   if(typeof v18Testing!=="undefined" && !v18Testing.active){v18Testing.invincible=false;v18Testing.infiniteMana=false;}
   const code =
     roomCode.trim().toUpperCase();
@@ -59,6 +59,13 @@ function connectMultiplayer(roomCode) {
     return;
   }
 
+  // Fail closed: no anonymous or banned users in protected rooms.
+  try{
+    const session=await supabaseClient.auth.getUser();
+    if(!session.data?.user){notice("SIGN IN TO JOIN A PROTECTED ROOM");return;}
+    const allowed=await supabaseClient.rpc("af_room_allowed",{room_code:code});
+    if(allowed.error||allowed.data!==true){notice("ROOM ACCESS DENIED • SERVER CHECK REQUIRED");return;}
+  }catch(_){notice("ROOM AUTHORIZATION UNAVAILABLE");return;}
   if (multiplayerChannel) {
     supabaseClient.removeChannel(
       multiplayerChannel
@@ -134,9 +141,7 @@ function connectMultiplayer(roomCode) {
     .on("broadcast", {event:"af-pause"}, ({payload}) => {
       if (typeof afPauseReceive === "function") afPauseReceive(payload);
     })
-    .on("broadcast", {event:"room-chat"}, ({payload}) => {
-      if (typeof v18ReceiveChat === "function") v18ReceiveChat(payload);
-    })
+
     .subscribe(
       (status, error) => {
         console.log(
@@ -7332,7 +7337,7 @@ v18ChatUI.style.cssText="position:fixed;right:10px;top:190px;width:min(320px,cal
 v18ChatUI.innerHTML=`<button id="v18ChatCollapse" style="background:#292d50;color:white;border:0;padding:7px">ROOM CHAT ▾</button><div id="v18ChatInner"><div id="v18ChatFeed" role="log" aria-live="polite" style="height:100px;overflow:auto;padding:7px;overflow-wrap:anywhere"></div><form id="v18ChatForm" style="display:flex;padding:5px;gap:4px"><input id="v18ChatInput" maxlength="160" autocomplete="off" aria-label="Chat message" placeholder="Message (160 max)" style="min-width:0;flex:1;background:#20263e;color:white;border:1px solid #5a6386;border-radius:6px;padding:7px"><button style="background:#343e76;color:white;border:0;border-radius:6px">SEND</button></form></div>`;
 document.body.appendChild(v18ChatUI);
 const v18ChatFeed=document.getElementById("v18ChatFeed");
-function v18ChatReset(code){v18ChatLog.length=0;v18ChatFeed.replaceChildren();v18ChatUI.style.display="flex";v18ChatAdd({id:"system",name:"Room",text:`Connected to ${code}`});}
+function v18ChatReset(code){af22ChatLastId=0;v18ChatLog.length=0;v18ChatFeed.replaceChildren();v18ChatUI.style.display="flex";v18ChatAdd({id:"system",name:"Room",text:`Connected to ${code}`});}
 function v18ChatAdd(msg){
   if(v18ChatBlocked.has(msg.id)||v18ChatMuted.has(msg.id))return;
   v18ChatLog.push(msg);if(v18ChatLog.length>80)v18ChatLog.shift();
@@ -7363,16 +7368,43 @@ function v18ReceiveChat(p){
   if(!text||!name||v18ChatBlocked.has(p.id))return;
   v18ChatAdd({id:p.id.slice(0,64),name,text});
 }
-async function v18SendChat(text){
-  text=String(text).trim().slice(0,160);
-  if(!text||!multiplayerChannel||!multiplayerRoom){notice("JOIN A ROOM TO CHAT");return;}
-  if(Date.now()-v18ChatLastSent<2500){notice("CHAT: WAIT 2.5 SECONDS");return;}
-  v18ChatLastSent=Date.now();
-  const payload={id:multiplayerId,name:v18ChatName,text};
-  try{const status=await multiplayerChannel.send({type:"broadcast",event:"room-chat",payload});
-    if(status==="ok")v18ChatAdd(payload);else notice("CHAT SEND FAILED");
-  }catch(_){notice("CHAT SEND FAILED");}
+let af22ChatLastId=0;
+let af22ChatPolling=false;
+async function af22PollChat(){
+ if(af22ChatPolling||!multiplayerRoom||!supabaseClient)return;
+ af22ChatPolling=true;
+ try{
+  const room=multiplayerRoom;
+  const result=await supabaseClient.rpc("af_read_room_messages",{room_code:room,after_id:af22ChatLastId});
+  if(result.error){if(/denied|permission|restricted/i.test(result.error.message))af22Disconnect("ROOM ACCESS REVOKED");return;}
+  if(room!==multiplayerRoom)return;
+  for(const m of result.data||[]){
+   af22ChatLastId=Math.max(af22ChatLastId,Number(m.id)||0);
+   v18ChatAdd({id:m.sender_id,name:m.sender_name,text:m.body});
+  }
+ }catch(_){}finally{af22ChatPolling=false;}
 }
+function af22Disconnect(reason){
+ if(multiplayerChannel){supabaseClient.removeChannel(multiplayerChannel);multiplayerChannel=null;}
+ multiplayerRoom=null;multiplayerPlayers.clear();v18ChatUI.style.display="none";notice(reason);
+}
+setInterval(()=>{if(multiplayerRoom)af22PollChat();},1600);
+setInterval(async()=>{if(!multiplayerRoom||!supabaseClient)return;const room=multiplayerRoom;
+ try{const result=await supabaseClient.rpc("af_room_allowed",{room_code:room});if(room===multiplayerRoom&&(result.error||result.data!==true))af22Disconnect("ROOM ACCESS REVOKED");}
+ catch(_){if(room===multiplayerRoom)af22Disconnect("ROOM AUTHORIZATION FAILED");}
+},12000);
+async function v18SendChat(text){
+ text=String(text).trim().slice(0,160);
+ if(!text||!multiplayerRoom||!supabaseClient){notice("JOIN A ROOM TO CHAT");return;}
+ if(Date.now()-v18ChatLastSent<2500){notice("CHAT: WAIT 2.5 SECONDS");return;}
+ v18ChatLastSent=Date.now();
+ try{
+  const result=await supabaseClient.rpc("af_send_room_message",{room_code:multiplayerRoom,sender_name:v18ChatName.slice(0,24),message_body:text});
+  if(result.error){notice("CHAT REJECTED: "+result.error.message);return;}
+  await af22PollChat();
+ }catch(_){notice("CHAT SERVER UNAVAILABLE");}
+}
+
 document.getElementById("v18ChatForm").addEventListener("submit",e=>{e.preventDefault();const input=document.getElementById("v18ChatInput");v18SendChat(input.value);input.value="";});
 document.getElementById("v18ChatCollapse").addEventListener("click",()=>{v18ChatHidden=!v18ChatHidden;document.getElementById("v18ChatInner").style.display=v18ChatHidden?"none":"block";});
 function v18ShowChat(full){
