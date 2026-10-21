@@ -5694,9 +5694,16 @@ function drawWorld() {
   for (
     const shot of S.shots
   ) {
-    drawSpellProjectile(
-      shot
-    );
+    if(shot.attackType&&shot.attackType!=="projectile"){
+      ctx.save();ctx.translate(shot.x,shot.y);ctx.rotate(Math.atan2(shot.vy,shot.vx));
+      ctx.fillStyle=shot.color;ctx.strokeStyle=shot.color;ctx.shadowColor=shot.color;ctx.shadowBlur=12;
+      if(shot.attackType==="beam"){ctx.fillRect(-20,-5,60,10);}
+      else if(shot.attackType==="slash"){ctx.lineWidth=7;ctx.beginPath();ctx.arc(0,0,24,-1.2,1.2);ctx.stroke();}
+      else if(shot.attackType==="wave"){ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,23,-1.3,1.3);ctx.stroke();}
+      else if(shot.attackType==="burst"){ctx.beginPath();ctx.arc(0,0,20,0,Math.PI*2);ctx.fill();}
+      else {ctx.beginPath();ctx.arc(0,0,13,0,Math.PI*2);ctx.fill();}
+      ctx.restore();
+    }else drawSpellProjectile(shot);
   }
 
   /* ENEMY SHOTS */
@@ -7730,6 +7737,9 @@ function v18ShowTestingControls(){
   <label>Boss <select id="v18TestBoss" style="width:100%;padding:8px"></select></label>
   <button id="v18TestSpawnBoss" class="menuButton" style="width:100%">SPAWN BOSS</button>
   <button id="v18TestClear" class="menuButton" style="width:100%">CLEAR ARENA</button>
+  <button id="af19TestMagic" class="menuButton" style="width:100%">TEST SELECTED MAGIC • FULL MANA</button>
+  <button id="af19TestBurst" class="menuButton" style="width:100%">PARTICLE STRESS TEST (CAPPED)</button>
+  <button id="af19TestStats" class="menuButton" style="width:100%">PERFORMANCE DIAGNOSTICS</button>
   <button id="v18TestExit" class="menuButton" style="width:100%;background:#67304b">EXIT LAB • RESTORE NORMAL GAME</button>`;
   const god=document.getElementById("v18TestGod"),mana=document.getElementById("v18TestMana");
   god.checked=v18Testing.invincible;mana.checked=v18Testing.infiniteMana;
@@ -7751,6 +7761,9 @@ function v18ShowTestingControls(){
     const boss=S.enemies.find(e=>e.boss);if(boss){boss.hp=hp();boss.maxHp=hp();}
     v18Panel.style.display="none";
   };
+  document.getElementById("af19TestMagic").onclick=()=>{S.mana=100;notice("READY: "+S.selected);v18Panel.style.display="none";};
+  document.getElementById("af19TestBurst").onclick=()=>{burst(S.x,S.y,S.magic[S.selected]?.color||"#fff",180);notice("CAPPED VFX TEST");v18Panel.style.display="none";};
+  document.getElementById("af19TestStats").onclick=()=>{notice("Entities: "+S.enemies.length+" | Shots: "+S.shots.length+" | Particles: "+S.particles.length);};
   document.getElementById("v18TestClear").onclick=()=>{S.enemies.length=0;S.shots.length=0;S.enemyShots.length=0;S.zones.length=0;S.particles.length=0;notice("LAB CLEARED");};
   document.getElementById("v18TestExit").onclick=v18ExitTesting;
 }
