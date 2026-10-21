@@ -7463,6 +7463,41 @@ function v18OwnerButton(label,action){
   button.textContent=label;button.addEventListener("click",action);
   return button;
 }
+async function af20StaffPanel(){
+ v18Body.replaceChildren();
+ const heading=document.createElement("h3");heading.textContent="STAFF ROLE MANAGER";
+ const help=document.createElement("p");help.textContent="Only the verified owner can appoint or remove staff. Requires the server-side role migration to be installed. Admins and moderators cannot appoint other staff.";
+ const form=document.createElement("form");form.style.cssText="display:grid;gap:10px";
+ const player=document.createElement("input");player.required=true;player.placeholder="Player account UUID";player.pattern="[0-9a-fA-F-]{36}";player.maxLength=36;player.style.padding="10px";
+ const role=document.createElement("select");role.style.padding="10px";
+ for(const [value,label] of [["admin","Admin"],["mod","Moderator"],["player","Remove staff role"]])role.add(new Option(label,value));
+ const submit=document.createElement("button");submit.className="menuButton";submit.textContent="UPDATE STAFF ROLE";submit.type="submit";
+ const status=document.createElement("p");status.setAttribute("role","status");
+ form.append(player,role,submit,status);
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();submit.disabled=true;status.textContent="Checking owner permission…";
+  try{
+   const check=await supabaseClient.rpc("af_is_owner");
+   if(check.error||check.data!==true){status.textContent="Owner verification failed.";return;}
+   const {error}=await supabaseClient.rpc("af_set_staff_role",{target_user:player.value.trim(),new_role:role.value});
+   status.textContent=error?"Server rejected role update: "+error.message:"Role updated on server.";
+  }catch(_){status.textContent="Role update failed; check network and server migration.";}
+  finally{submit.disabled=false;}
+ });
+ const list=document.createElement("button");list.className="menuButton";list.textContent="REFRESH STAFF LIST";
+ const output=document.createElement("div");
+ list.onclick=async()=>{
+  output.textContent="Loading staff…";
+  try{
+   const {data,error}=await supabaseClient.rpc("af_list_staff");
+   if(error){output.textContent="Unable to list staff: "+error.message;return;}
+   output.replaceChildren();
+   if(!data?.length){output.textContent="No appointed staff.";return;}
+   for(const item of data){const p=document.createElement("p");p.textContent=String(item.user_id)+" — "+String(item.role);output.append(p);}
+  }catch(_){output.textContent="Could not load staff.";}
+ };
+ v18Body.append(heading,help,form,list,output,v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));
+}
 async function v18ShowAdmin(){
   afOwnerVerified=false;
   v18Body.replaceChildren();
@@ -7534,6 +7569,8 @@ async function v18ShowAdmin(){
         }catch(_){message.textContent="Could not grant title. Check your connection.";}
       });
       entries.push({label:"GRANT TITLE",node:form});
+      entries.push({label:"STAFF ROLES",node:v18OwnerButton("MANAGE ADMINS & MODERATORS",()=>af20StaffPanel())});
+      entries.push({label:"ROOM HEALTH",node:v18OwnerButton("ROOM HEALTH & COUNTERS",()=>{v18Body.replaceChildren();const p=document.createElement("p");p.textContent="Room: "+(multiplayerRoom||"Offline")+" | Connected remote players: "+multiplayerPlayers.size+" | Enemies: "+S.enemies.length+" | Active projectiles: "+(S.shots.length+S.enemyShots.length)+" | Particles: "+S.particles.length;v18Body.append(p,v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));})});
       entries.push({label:"ACCOUNT",node:v18OwnerButton("MY ACCOUNT",()=>v18Open("ACCOUNT"))});
       entries.push({label:"ROOM CHAT",node:v18OwnerButton("ROOM CHAT",()=>v18Open("ROOM CHAT"))});
       entries.push({label:"ROOM INSPECTOR",node:v18OwnerButton("ROOM INSPECTOR",()=>v18OwnerRoomInspector())});
