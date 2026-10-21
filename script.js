@@ -7463,6 +7463,40 @@ function v18OwnerButton(label,action){
   button.textContent=label;button.addEventListener("click",action);
   return button;
 }
+async function af21ModerationPanel(){
+ v18Body.replaceChildren();
+ const title=document.createElement("h3");title.textContent="STAFF MODERATION";
+ const status=document.createElement("p");status.textContent="Checking role…";
+ v18Body.append(title,status);
+ if(!supabaseClient||!await v18RefreshAccount()){status.textContent="Sign in first.";return;}
+ const result=await supabaseClient.rpc("af_my_staff_role");
+ if(result.error||!["owner","admin","mod"].includes(result.data)){status.textContent="Staff role not verified. Apply SQL migrations first.";return;}
+ const staffRole=result.data;status.textContent="Verified: "+staffRole.toUpperCase();
+ const form=document.createElement("form");form.style.cssText="display:grid;gap:10px";
+ const player=document.createElement("input");player.placeholder="Target account UUID";player.pattern="[0-9a-fA-F-]{36}";player.required=true;player.style.padding="10px";
+ const action=document.createElement("select");action.style.padding="10px";
+ const options=staffRole==="mod"?["warn","mute","unmute"]:["warn","mute","unmute","ban","unban"];
+ options.forEach(a=>action.add(new Option(a.toUpperCase(),a)));
+ const reason=document.createElement("input");reason.placeholder="Reason (max 200 characters)";reason.maxLength=200;reason.style.padding="10px";
+ const button=v18OwnerButton("APPLY MODERATION",()=>{});button.type="submit";
+ const message=document.createElement("p");message.setAttribute("role","status");
+ form.append(player,action,reason,button,message);
+ form.onsubmit=async e=>{e.preventDefault();button.disabled=true;message.textContent="Submitting to server…";
+ try{const {error}=await supabaseClient.rpc("af_moderate_player",{target_user:player.value.trim(),moderation_action:action.value,moderation_reason:reason.value.trim()});message.textContent=error?"Denied: "+error.message:"Action recorded on server. Note: realtime chat enforcement requires server routing.";}
+ catch(_){message.textContent="Request failed.";}finally{button.disabled=false;}
+ };
+ v18Body.append(form,v18OwnerButton("BACK",()=>v18Open(staffRole==="owner"?"OWNER PANEL":"STAFF PANEL")));
+}
+async function af21OpenStaff(){
+ v18Body.replaceChildren();
+ const status=document.createElement("p");status.textContent="Verifying staff role…";v18Body.append(status);
+ if(!supabaseClient||!await v18RefreshAccount()){status.textContent="Sign in first.";return;}
+ const {data,error}=await supabaseClient.rpc("af_my_staff_role");
+ if(error||!["owner","admin","mod"].includes(data)){status.textContent="No staff access or server migration missing.";return;}
+ status.textContent="STAFF PANEL • "+data.toUpperCase();
+ v18Body.append(v18OwnerButton("MODERATION ACTIONS",af21ModerationPanel));
+ if(data==="owner")v18Body.append(v18OwnerButton("OWNER PANEL",()=>v18Open("OWNER PANEL")));
+}
 async function af20StaffPanel(){
  v18Body.replaceChildren();
  const heading=document.createElement("h3");heading.textContent="STAFF ROLE MANAGER";
@@ -7570,6 +7604,7 @@ async function v18ShowAdmin(){
       });
       entries.push({label:"GRANT TITLE",node:form});
       entries.push({label:"STAFF ROLES",node:v18OwnerButton("MANAGE ADMINS & MODERATORS",()=>af20StaffPanel())});
+      entries.push({label:"MODERATION",node:v18OwnerButton("STAFF MODERATION",af21ModerationPanel)});
       entries.push({label:"ROOM HEALTH",node:v18OwnerButton("ROOM HEALTH & COUNTERS",()=>{v18Body.replaceChildren();const p=document.createElement("p");p.textContent="Room: "+(multiplayerRoom||"Offline")+" | Connected remote players: "+multiplayerPlayers.size+" | Enemies: "+S.enemies.length+" | Active projectiles: "+(S.shots.length+S.enemyShots.length)+" | Particles: "+S.particles.length;v18Body.append(p,v18OwnerButton("BACK TO OWNER PANEL",()=>v18Open("OWNER PANEL")));})});
       entries.push({label:"ACCOUNT",node:v18OwnerButton("MY ACCOUNT",()=>v18Open("ACCOUNT"))});
       entries.push({label:"ROOM CHAT",node:v18OwnerButton("ROOM CHAT",()=>v18Open("ROOM CHAT"))});
@@ -7594,6 +7629,11 @@ async function v18ShowAdmin(){
 document.getElementById("menuChat").addEventListener("click",()=>v18Open("ROOM CHAT"));
 document.getElementById("menuAccount").addEventListener("click",()=>v18Open("ACCOUNT"));
 document.getElementById("menuAdmin").addEventListener("click",()=>v18Open("OWNER PANEL"));
+const af21StaffEntry=document.createElement("button");
+af21StaffEntry.className="menuButton";af21StaffEntry.id="af21StaffEntry";af21StaffEntry.textContent="STAFF PANEL";
+af21StaffEntry.addEventListener("click",()=>{v18Open("ACCOUNT");af21OpenStaff();});
+document.getElementById("menuAdmin").insertAdjacentElement("afterend",af21StaffEntry);
+
 
 document.getElementById("menuSettings").addEventListener("click", () => v18Open("SETTINGS"));
 document.getElementById("menuCustomization").addEventListener("click", () => v18Open("CUSTOMIZATION"));
