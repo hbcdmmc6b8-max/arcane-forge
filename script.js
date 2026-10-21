@@ -79,9 +79,10 @@ async function connectMultiplayer(roomCode) {
 
   multiplayerChannel =
     supabaseClient.channel(
-      `arcane-forge:${code}`,
+      `arcane-forge-private:${code}`,
       {
         config: {
+          private:true,
           broadcast: {
             self: false
           }
@@ -89,6 +90,10 @@ async function connectMultiplayer(roomCode) {
       }
     );
 
+  // Private Realtime topics require a fresh authenticated JWT.
+  const {data:authData}=await supabaseClient.auth.getSession();
+  if(!authData?.session?.access_token){af22Disconnect("ROOM AUTHENTICATION EXPIRED");return;}
+  await supabaseClient.realtime.setAuth(authData.session.access_token);
   multiplayerChannel
     .on(
       "broadcast",
@@ -150,10 +155,11 @@ async function connectMultiplayer(roomCode) {
         );
 
         if (error) {
-          console.error(
-            "MULTIPLAYER ERROR:",
-            error
-          );
+          console.error("MULTIPLAYER ERROR:",error);
+        }
+        if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED"){
+          if(multiplayerRoom===code)af22Disconnect("PRIVATE ROOM CONNECTION CLOSED");
+          return;
         }
 
         if (
