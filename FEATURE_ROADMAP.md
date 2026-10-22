@@ -16,16 +16,16 @@ This is an implementation plan, NOT a claim that the features are finished.
 - [ ] 9. Guilds: membership, invites and headquarters
 - [ ] 10. Spell trading: atomic transactions and ownership checks
 - [ ] 11. Cooperative boss raids: synchronized authoritative state
-- [ ] 12. Spectator mode: permissions and replay
+- [x] 12. Spectator mode: permissions and replay
 
 ## Owner and staff tools
-- [ ] 13. Live event creator: server-managed event lifecycle
-- [ ] 14. Custom boss builder: validated templates and encounters
-- [ ] 15. Server announcements: authenticated owner broadcast
+- [x] 13. Live event creator: server-managed event lifecycle
+- [x] 14. Custom boss builder: validated templates and encounters
+- [x] 15. Server announcements: authenticated owner broadcast
 - [ ] 16. Staff dashboard: reports, audit history and permission checks
 
 ## World and progression
-- [ ] 17. Elemental realms: maps, enemies and loot
+- [x] 17. Elemental realms: maps, enemies and loot
 - [x] 18. Advanced forging: catalysts, materials and outcome rules
 - [x] 19. Magic skill trees: progression and branching upgrades
 - [x] 20. Secret discoveries: hidden recipes and achievements
@@ -44,3 +44,6 @@ Features 5, 6, 18, 19 and 20 have initial client-side gameplay implementations: 
 
 ## Batch 2 notes (October 2026)
 First-pass local implementations of 1, 2, 3, 4, 7: timed combat spell fusion, selectable awakening styles, purchasable/equippable weapon modifiers, timed personal dimensions and clashes with enemy projectiles. These do not yet include bespoke sprites for each weapon, authoritative multiplayer collision, advanced domain rules, or full QA. The weapon damage bonus currently reads the local player's equipped weapon on hit; multiplayer combat requires server-side authority.
+
+## Batch 3 notes (October 2026)
+First-pass **local-only** implementations for 12, 13, 14, 15, 17: camera follows nearest enemy, 60-second named local event, configurable local boss spawn, local announcement banner, and selectable realm backgrounds/enemy weighting. This is **not** true network spectator mode, server-wide events/announcements, an owner-verified live event creator, or complete realm maps. Server-backed versions require authenticated authorization, persistent state and multiplayer testing. The feature checkmarks track prototype coverage only.
