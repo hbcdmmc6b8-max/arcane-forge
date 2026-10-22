@@ -1221,6 +1221,15 @@ function renderForge() {
         </small>
       `;
 
+      if(magic.parents?.length&&!magic.spellFamily){
+        const style=document.createElement("small");
+        style.className="af25ModelTag";style.textContent="FORGED MODEL "+((hash(name)%48)+1)+" / 48";
+        button.append(style);
+      }else if(magic.spellFamily){
+        const style=document.createElement("small");style.className="af25ModelTag";
+        style.textContent=magic.spellFamily.toUpperCase()+" • "+(magic.attackType||"projectile").toUpperCase();
+        button.append(style);
+      }
       button.addEventListener(
         "click",
         () => {
