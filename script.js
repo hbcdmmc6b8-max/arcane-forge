@@ -242,6 +242,28 @@ const base = {
   Force: ["#ff79dd", ["push","impact","control"]]
 };
 
+/* Feature 21: four selectable spell forms for every primordial element. */
+const af25SpellForms={
+ Fire:[["Ember Bolt","projectile","burn"],["Flame Lance","beam","burn"],["Inferno Crescent","slash","heat"],["Phoenix Pulse","burst","burn"]],
+ Water:[["Aqua Dart","projectile","wet"],["Tidal Surge","wave","push"],["Healing Current","burst","heal"],["Pressure Lance","beam","wet"]],
+ Wind:[["Gale Arrow","projectile","speed"],["Cyclone Arc","slash","push"],["Tempest Wave","wave","speed"],["Air Cannon","burst","push"]],
+ Earth:[["Stone Spear","projectile","stone"],["Quake Ring","wave","impact"],["Boulder Crash","burst","mass"],["Crystal Edge","slash","solid"]],
+ Lightning:[["Spark Shot","projectile","shock"],["Thunder Spear","beam","shock"],["Volt Crescent","slash","speed"],["Static Nova","burst","shock"]],
+ Ice:[["Frost Needle","projectile","freeze"],["Glacial Beam","beam","cold"],["Snowstorm Ring","wave","freeze"],["Ice Blade","slash","solid"]],
+ Light:[["Radiant Bolt","projectile","radiant"],["Solar Ray","beam","purify"],["Halo Wave","wave","heal"],["Dawn Burst","burst","radiant"]],
+ Shadow:[["Night Shard","projectile","dark"],["Void Blade","slash","drain"],["Eclipse Wave","wave","conceal"],["Umbral Nova","burst","dark"]],
+ Force:[["Kinetic Shot","projectile","impact"],["Gravity Wave","wave","control"],["Repulsion Burst","burst","push"],["Vector Blade","slash","impact"]]
+};
+function af25RegisterSpells(){
+ for(const [element,forms] of Object.entries(af25SpellForms)){
+  const original=S.magic[element];if(!original)continue;
+  forms.forEach(([name,attackType,trait],index)=>{
+   if(S.magic[name])return;
+   S.magic[name]={color:original.color,traits:[...new Set([...original.traits,trait])],parents:[element],attackType,modelSeed:hash(element+":"+name),powerMultiplier:1+index*.08,spellFamily:element};
+  });
+ }
+}
+
 /*
   IMPORTANT:
   Recipe keys must be alphabetically sorted.
@@ -1156,6 +1178,8 @@ function awaken() {
 /* =========================
    FORGE
 ========================= */
+
+af25RegisterSpells();
 
 function renderForge() {
   const grid =
@@ -5758,11 +5782,37 @@ function drawWorld() {
     }
   }
 
+/* Procedural forged spell models: 48 deterministic silhouettes, no asset downloads. */
+function af25DrawForgedModel(shot){
+ const magic=S.magic[shot.magicName];if(!magic||!magic.parents?.length||magic.spellFamily)return false;
+ const seed=(magic.modelSeed??hash(shot.magicName))>>>0;
+ const shape=seed%12,layer=Math.floor(seed/12)%4;
+ const rotation=Math.atan2(shot.vy,shot.vx);
+ ctx.save();ctx.translate(shot.x,shot.y);ctx.rotate(rotation);
+ ctx.shadowColor=shot.color;ctx.shadowBlur=10;
+ const radius=9+layer*3;
+ for(let ring=0;ring<1+layer;ring++){
+  ctx.globalAlpha=1-ring*.18;ctx.strokeStyle=shot.color;ctx.fillStyle=shot.color;
+  const r=radius+ring*5;
+  ctx.lineWidth=2+ring*.5;ctx.beginPath();
+  if(shape%4===0){for(let p=0;p<6;p++){const a=p*Math.PI/3;const x=Math.cos(a)*r,y=Math.sin(a)*r;p?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();}
+  else if(shape%4===1){ctx.moveTo(-r*1.8,0);ctx.lineTo(0,-r*.8);ctx.lineTo(r*1.8,0);ctx.lineTo(0,r*.8);ctx.closePath();}
+  else if(shape%4===2){ctx.arc(0,0,r,0,Math.PI*2);}
+  else {for(let p=0;p<10;p++){const a=p*Math.PI/5,pr=p%2?r*.4:r*1.5;p?ctx.lineTo(Math.cos(a)*pr,Math.sin(a)*pr):ctx.moveTo(Math.cos(a)*pr,Math.sin(a)*pr);}ctx.closePath();}
+  if((shape+ring)%3===0)ctx.fill();else ctx.stroke();
+ }
+ const spikes=2+shape%5;
+ ctx.strokeStyle="#ffffff99";ctx.lineWidth=1.4;ctx.globalAlpha=.8;
+ for(let p=0;p<spikes;p++){const a=p*2*Math.PI/spikes;ctx.beginPath();ctx.moveTo(Math.cos(a)*radius*.3,Math.sin(a)*radius*.3);ctx.lineTo(Math.cos(a)*(radius+7),Math.sin(a)*(radius+7));ctx.stroke();}
+ ctx.restore();return true;
+}
+
   /* PLAYER SHOTS */
 
   for (
     const shot of S.shots
   ) {
+    if(af25DrawForgedModel(shot))continue;
     if(shot.attackType&&shot.attackType!=="projectile"){
       ctx.save();ctx.translate(shot.x,shot.y);ctx.rotate(Math.atan2(shot.vy,shot.vx));
       ctx.fillStyle=shot.color;ctx.strokeStyle=shot.color;ctx.shadowColor=shot.color;ctx.shadowBlur=12;
