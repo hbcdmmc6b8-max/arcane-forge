@@ -2589,7 +2589,7 @@ function generatedPower(magic) {
 ========================= */
 
 function usePower() {
-  if (S.dead) return;
+  if (S.dead || performance.now()<af30.freezeUntil) return;
 
   if (
     S.powerCooldown > 0
@@ -3672,7 +3672,7 @@ function af28UI(){
 af28UI();
 
 function castSpell() {
-  if (S.dead) return;
+  if (S.dead || performance.now()<af30.freezeUntil) return;
 
   const customMagic=S.magic[S.selected]||{};
   const cost=Math.ceil((S.awakened?7:10)*Math.max(.5,Math.min(3,Number(customMagic.powerMultiplier)||1))*(af27Upgrade(S.selected)==="focus"?.8:1)*af28Weapon().mana);
@@ -3847,7 +3847,7 @@ function activateWard() {
 }
 
 function dodge() {
-  if (S.dead) return;
+  if (S.dead || performance.now()<af30.freezeUntil) return;
 
   let dx =
     joystick.x;
@@ -4165,15 +4165,10 @@ if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "u
         ? 205
         : 180;
 
-    S.x +=
-      joystick.x *
-      moveSpeed *
-      delta;
-
-    S.y +=
-      joystick.y *
-      moveSpeed *
-      delta;
+    if(performance.now()>=af30.freezeUntil){
+      S.x += joystick.x * moveSpeed * delta;
+      S.y += joystick.y * moveSpeed * delta;
+    }
 
     if (performance.now() >= playerAimUntil) {
       facePlayer(joystick.x, joystick.y);
