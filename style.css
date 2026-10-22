@@ -686,3 +686,45 @@ button.af-button-pop{animation:af-button-press .34s cubic-bezier(.2,.8,.2,1)}
 #af30Panel button{padding:10px;background:#34346a;color:white;border:1px solid #8687c8;border-radius:8px;cursor:pointer}
 #af30Panel p{overflow-wrap:anywhere;line-height:1.45}
 @media(max-width:480px){#af30Open{top:55px;right:7px;padding:7px;font-size:10px}#af30Panel{padding:12px}#af30Menu button{font-size:11px;padding:8px}}
+
+/* v3.1: separate primary combat, extra abilities, and navigation on phones */
+.controls{
+ display:grid!important;
+ grid-template-columns:repeat(2,minmax(0,64px))!important;
+ grid-auto-flow:row!important;
+ gap:9px!important;
+ width:max-content!important;
+ max-width:calc(100vw - 20px);
+ right:max(12px,env(safe-area-inset-right))!important;
+ bottom:calc(102px + env(safe-area-inset-bottom))!important;
+}
+.controls>.action{box-sizing:border-box;width:64px!important;height:58px!important;min-width:0!important;position:static!important;margin:0!important;white-space:normal!important;line-height:1.1;text-align:center}
+#af31More{
+ position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(65px + env(safe-area-inset-bottom));
+ z-index:85;width:137px;height:33px;border:1px solid #a79af2;border-radius:10px;
+ background:#28244c;color:white;font-size:12px;font-weight:800;touch-action:manipulation
+}
+#af31Extras:not([hidden]){
+ position:fixed;right:max(12px,env(safe-area-inset-right));bottom:calc(250px + env(safe-area-inset-bottom));
+ z-index:85;width:min(230px,calc(100vw - 24px));max-height:min(43vh,330px);overflow-y:auto;
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+ padding:10px;border:1px solid #8b82b9;border-radius:14px;background:#11172cef;
+ box-shadow:0 10px 35px #000a;overscroll-behavior:contain
+}
+#af31Extras>.action{position:static!important;box-sizing:border-box;width:100%!important;height:48px!important;
+ min-width:0!important;margin:0!important;padding:5px!important;line-height:1.1;font-size:11px!important;white-space:normal!important}
+.nav{bottom:calc(12px + env(safe-area-inset-bottom))!important;max-width:calc(100vw - 24px)}
+#stick{bottom:calc(125px + env(safe-area-inset-bottom))}
+@media(max-width:600px){
+ .controls{bottom:calc(110px + env(safe-area-inset-bottom))!important}
+ #af31More{bottom:calc(72px + env(safe-area-inset-bottom))}
+ #af31Extras:not([hidden]){bottom:calc(263px + env(safe-area-inset-bottom));max-height:35vh}
+ .nav{left:12px!important;right:auto!important;transform:none!important;bottom:calc(12px + env(safe-area-inset-bottom))!important}
+ .nav button{padding:9px 7px!important;font-size:10px!important}
+}
+@media(max-width:370px){
+ .controls{right:8px!important;grid-template-columns:repeat(2,56px)!important;gap:6px!important}
+ .controls>.action{width:56px!important;height:53px!important;font-size:10px!important}
+ #af31More{right:8px;width:118px}
+ .nav button{padding:7px 5px!important;font-size:9px!important}
+}
