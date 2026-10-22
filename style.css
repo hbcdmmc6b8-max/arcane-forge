@@ -900,3 +900,18 @@ html,body{overflow:hidden}
  #langSwitch{top:5px}
  #af30Open{top:39px!important}
 }
+
+/* v3.3 screenshot follow-up: POWER is a tray action, never a floating overlay */
+#power{
+ position:static!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+ transform:none!important;z-index:auto!important;box-sizing:border-box!important;
+ width:100%!important;min-width:0!important;height:auto!important;min-height:49px!important;
+ margin:0!important;padding:7px 5px!important;touch-action:manipulation!important
+}
+#af30Open{
+ top:calc(103px + env(safe-area-inset-top,0px))!important;
+ max-width:142px!important;font-size:10px!important;padding:8px!important
+}
+@media(max-height:550px) and (orientation:landscape){
+ #af30Open{top:calc(72px + env(safe-area-inset-top,0px))!important}
+}
