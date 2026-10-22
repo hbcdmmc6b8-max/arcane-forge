@@ -4747,6 +4747,20 @@ if ((typeof menuOpen !== "undefined" && menuOpen) || (typeof afPauseState !== "u
       shot.y += shot.vy;
 
       shot.life--;
+      /* Spell clashes: allied magic and hostile projectiles cancel on impact. */
+      for(const hostile of S.enemyShots){
+        if(hostile.life===0||shot.life<=0)continue;
+        const clashRadius=(hostile.r||7)+10;
+        if(Math.hypot(shot.x-hostile.x,shot.y-hostile.y)>clashRadius)continue;
+        shot.life=0;hostile.life=0;
+        burst(shot.x,shot.y,shot.color,20);
+        impactVfx(shot.x,shot.y,shot.color,shot.magicName);
+        if(performance.now()-(window.af28LastClash||0)>650){
+          window.af28LastClash=performance.now();notice("SPELL CLASH!");
+        }
+        break;
+      }
+      if(shot.life<=0)continue;
 
       for (
         const enemy of
