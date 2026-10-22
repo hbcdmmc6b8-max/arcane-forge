@@ -3463,7 +3463,7 @@ function af24BarrierCast(){
  if(S.mana<35){notice("BARRIER NEEDS 35 MANA");return;}
  if(performance.now()<af24BarrierUntil){notice("BARRIER ALREADY ACTIVE");return;}
  S.mana-=35;af24BarrierUntil=performance.now()+6500;
- S.ward=Math.max(S.ward,6.5);S.armor=Math.max(S.armor,70);
+ S.ward=Math.max(S.ward,390);S.armor=Math.max(S.armor,6.5);
  burst(S.x,S.y,"#8adfff",45);notice("SECRET BARRIER • 6.5 SECONDS");
  updateHUD();
 }
