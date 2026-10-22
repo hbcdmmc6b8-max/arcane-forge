@@ -665,3 +665,12 @@ button.af-button-pop{animation:af-button-press .34s cubic-bezier(.2,.8,.2,1)}
 .af28Loadout select{width:100%;min-width:0;background:#202849;color:white;border:1px solid #6c79a9;border-radius:8px;padding:10px}
 .af28Action{background:linear-gradient(135deg,#3d276f,#624ca0);border:1px solid #b49bff;color:#fff}
 @media(max-width:600px){.controls{flex-wrap:wrap;gap:5px}.af28Action{font-size:11px;padding:8px}}
+
+/* Local world and event creator controls */
+#af29Features{display:grid;gap:10px;margin:16px 0;padding:15px;background:#111c31;border:1px solid #637caa;border-radius:14px}
+#af29Features h3,#af29Features p{margin:0}
+#af29Features label{display:grid;gap:5px;font-size:13px;color:#dce5ff}
+#af29Features input,#af29Features select{box-sizing:border-box;width:100%;padding:10px;background:#1b2943;color:white;border:1px solid #7186b6;border-radius:8px}
+#af29Features button{padding:10px;background:#263e69;color:white;border:1px solid #759bda;border-radius:8px;cursor:pointer}
+#af29Banner:not([hidden]){position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;max-width:min(90vw,650px);padding:13px 22px;border:1px solid #a9c8ff;border-radius:12px;background:#0c1735ee;color:#fff;text-align:center;font-weight:700;box-shadow:0 0 22px #6b9aff55}
+.af29Camera{background:#30496d;color:#fff;border:1px solid #88b8ed}
