@@ -3452,6 +3452,46 @@ function af19MakeCreator(){
 }
 af19MakeCreator();
 
+/* Secret spell: a hidden corner glyph unlocks a defensive barrier locally. */
+const af24BarrierKey="af_secret_barrier_v1";
+let af24BarrierUnlocked=false;
+try{af24BarrierUnlocked=localStorage.getItem(af24BarrierKey)==="1";}catch(_){}
+let af24BarrierUntil=0;
+function af24BarrierCast(){
+ if(!af24BarrierUnlocked){notice("BARRIER IS LOCKED");return;}
+ if(S.dead)return;
+ if(S.mana<35){notice("BARRIER NEEDS 35 MANA");return;}
+ if(performance.now()<af24BarrierUntil){notice("BARRIER ALREADY ACTIVE");return;}
+ S.mana-=35;af24BarrierUntil=performance.now()+6500;
+ S.ward=Math.max(S.ward,6.5);S.armor=Math.max(S.armor,70);
+ burst(S.x,S.y,"#8adfff",45);notice("SECRET BARRIER • 6.5 SECONDS");
+ updateHUD();
+}
+function af24SetupSecret(){
+ const glyph=document.createElement("button");
+ glyph.id="af24SecretGlyph";glyph.type="button";glyph.title="An unusual rune";glyph.setAttribute("aria-label","Hidden arcane rune");
+ glyph.textContent="◇";document.body.append(glyph);
+ const modal=document.createElement("div");modal.id="af24SecretDialog";modal.style.cssText="position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;background:#050715e8;padding:20px";
+ modal.innerHTML='<form style="width:min(360px,100%);background:#151c34;border:1px solid #86b9ff;border-radius:16px;padding:22px;color:white;display:grid;gap:12px"><h2>SEALED ARCANE RUNE</h2><label>Enter the four-digit code<input type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" required autocomplete="off" style="display:block;width:100%;padding:12px;box-sizing:border-box"></label><p role="status"></p><button type="submit" class="menuButton">UNSEAL</button><button type="button" class="menuButton" id="af24SecretCancel">CANCEL</button></form>';
+ document.body.append(modal);
+ glyph.addEventListener("click",()=>{modal.style.display="flex";modal.querySelector("input").focus();});
+ modal.querySelector("#af24SecretCancel").onclick=()=>modal.style.display="none";
+ modal.addEventListener("click",e=>{if(e.target===modal)modal.style.display="none";});
+ modal.querySelector("form").addEventListener("submit",e=>{e.preventDefault();const field=modal.querySelector("input");const status=modal.querySelector('[role="status"]');
+  if(field.value!=="3231"){status.textContent="The seal rejects that code.";field.value="";return;}
+  af24BarrierUnlocked=true;try{localStorage.setItem(af24BarrierKey,"1");}catch(_){}
+  modal.style.display="none";glyph.classList.add("unsealed");af24ShowBarrierButton();notice("SECRET BARRIER UNLOCKED!");
+ });
+ if(af24BarrierUnlocked){glyph.classList.add("unsealed");af24ShowBarrierButton();}
+}
+function af24ShowBarrierButton(){
+ if(document.getElementById("af24BarrierButton"))return;
+ const button=document.createElement("button");button.id="af24BarrierButton";button.textContent="BARRIER";button.className="action";
+ button.title="Secret Barrier • 35 mana • 6.5 seconds";button.addEventListener("click",af24BarrierCast);
+ const controls=document.querySelector(".controls");if(controls)controls.append(button);
+}
+af24SetupSecret();
+
 function castSpell() {
   if (S.dead) return;
 
