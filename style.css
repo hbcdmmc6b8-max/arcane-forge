@@ -645,3 +645,11 @@ button.af-button-pop{animation:af-button-press .34s cubic-bezier(.2,.8,.2,1)}
  #mainMenu .menuPanel,#mainMenu .menuRune,#mainMenu h1,.modal.open,#forgeModal.af-forge-flash,.af-forge-burst,#af19Creator.af-reveal,button.af-button-pop{animation:none!important}
  #mainMenu .menuButton{transition:none!important}
 }
+
+/* Hidden barrier discovery and combat ability */
+#af24SecretGlyph{position:fixed;right:5px;bottom:5px;z-index:210;width:28px;height:28px;border:1px solid #344461;border-radius:7px;background:#0c1122;color:#657393;opacity:.48;font-size:17px;cursor:pointer;touch-action:manipulation;transition:opacity .2s,box-shadow .2s}
+#af24SecretGlyph:hover,#af24SecretGlyph:focus-visible{opacity:1;box-shadow:0 0 15px #81aaff}
+#af24SecretGlyph.unsealed{color:#9be5ff;border-color:#9be5ff}
+#af24BarrierButton{background:linear-gradient(135deg,#14456a,#3578a5);border:1px solid #8bdfff;color:#fff;box-shadow:0 0 14px #52b4ff55}
+#af24BarrierButton:active{filter:brightness(1.4)}
+@media(prefers-reduced-motion:reduce){#af24SecretGlyph{transition:none}}
