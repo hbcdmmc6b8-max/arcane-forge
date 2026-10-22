@@ -622,3 +622,26 @@ body{
       repeat(2,1fr);
   }
 }
+/* v1.9 motion pass: GPU-friendly transforms and accessible reduced motion */
+@keyframes af-menu-appear{from{opacity:0;transform:translateY(22px) scale(.96);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes af-rune-float{0%,100%{transform:translateY(0) rotate(-6deg);filter:drop-shadow(0 0 8px #b59aff)}50%{transform:translateY(-9px) rotate(7deg);filter:drop-shadow(0 0 22px #d1b3ff)}}
+@keyframes af-title-glow{0%,100%{text-shadow:0 0 10px #855ee766}50%{text-shadow:0 0 26px #bb93ffbb,0 0 45px #6640c066}}
+@keyframes af-button-press{0%{transform:scale(1)}42%{transform:scale(.94)}78%{transform:scale(1.035)}100%{transform:scale(1)}}
+@keyframes af-forge-pulse{0%{box-shadow:inset 0 0 0 transparent}35%{box-shadow:inset 0 0 90px #b58aff77}100%{box-shadow:inset 0 0 0 transparent}}
+@keyframes af-forge-spark{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(0deg)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(2.5) rotate(160deg)}}
+@keyframes af-modal-reveal{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+#mainMenu .menuPanel{animation:af-menu-appear .65s cubic-bezier(.16,1,.3,1) both}
+#mainMenu .menuRune{animation:af-rune-float 4s ease-in-out infinite}
+#mainMenu h1{animation:af-title-glow 3.4s ease-in-out infinite}
+#mainMenu .menuButton{transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;will-change:transform}
+#mainMenu .menuButton:hover{transform:translateY(-2px);filter:brightness(1.15);box-shadow:0 7px 22px #6d49b444}
+button.af-button-pop{animation:af-button-press .34s cubic-bezier(.2,.8,.2,1)}
+.modal.open{animation:af-modal-reveal .25s ease-out both}
+.af-forge-custom{margin-top:12px;background:linear-gradient(120deg,#54338e,#8950bc,#3e2b7d);border-color:#bc9bff}
+#forgeModal.af-forge-flash{animation:af-forge-pulse .85s ease-out}
+.af-forge-burst{position:fixed;left:50%;top:42%;width:90px;height:90px;border:4px solid var(--forge-color);border-radius:50%;box-shadow:0 0 25px var(--forge-color),inset 0 0 20px var(--forge-color);pointer-events:none;z-index:10;animation:af-forge-spark .9s ease-out forwards}
+#af19Creator.af-reveal{animation:af-modal-reveal .32s cubic-bezier(.16,1,.3,1) both}
+@media(prefers-reduced-motion:reduce){
+ #mainMenu .menuPanel,#mainMenu .menuRune,#mainMenu h1,.modal.open,#forgeModal.af-forge-flash,.af-forge-burst,#af19Creator.af-reveal,button.af-button-pop{animation:none!important}
+ #mainMenu .menuButton{transition:none!important}
+}
