@@ -47,3 +47,16 @@ First-pass local implementations of 1, 2, 3, 4, 7: timed combat spell fusion, se
 
 ## Batch 3 notes (October 2026)
 First-pass **local-only** implementations for 12, 13, 14, 15, 17: camera follows nearest enemy, 60-second named local event, configurable local boss spawn, local announcement banner, and selectable realm backgrounds/enemy weighting. This is **not** true network spectator mode, server-wide events/announcements, an owner-verified live event creator, or complete realm maps. Server-backed versions require authenticated authorization, persistent state and multiplayer testing. The feature checkmarks track prototype coverage only.
+
+## Feature 22 — Owner Live Server Control Center (NEW; not implemented)
+- [ ] **Owner-only live server management**, enforced by Supabase `af_is_owner()` on every action (never trust a client-side owner panel).
+- [ ] View active rooms and players, with room IDs, population, and server health; avoid exposing private user information.
+- [ ] Target a specific room or player: remove from match / force respawn, teleport within arena, freeze/unfreeze, heal, set mana, grant temporary buffs, reset arena.
+- [ ] Room actions: spawn boss waves (bounded), remove enemies, start/stop events, change realm, change match settings, post server announcement.
+- [ ] Bulk actions: explicitly select room(s), confirm before affecting all players; prevent accidental cross-room changes.
+- [ ] Use a **server-authorized command queue** with per-room sequence numbers, action allowlist, audit log, and expiration. Game clients consume only verified commands; clients cannot issue privileged commands directly.
+- [ ] Require confirmations for disruptive actions, rate limits, safe caps (e.g. 1–20 bosses per wave, configurable per-server limits), cooldowns, and a global emergency stop. **Never spawn a literal billion bosses**: that would crash players' devices or rooms.
+- [ ] Owner-only commands must be revocable, and should be rejected if the room is no longer active.
+- [ ] Real multiplayer integration and end-to-end tests, including owner vs admin/mod/player access tests.
+
+This feature is added to the plan, not deployed. Owner controls should operate only within the owner's Arcane Forge game servers and must not permit arbitrary execution or interference with unrelated services.
