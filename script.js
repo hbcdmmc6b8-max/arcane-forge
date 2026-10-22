@@ -8566,3 +8566,30 @@ async function af30Poll(){
 }
 af30Panel();
 setInterval(af30Poll,3500);
+
+/* Compact mobile HUD: primary combat controls stay in a 2x2 grid.
+   Additional abilities live in a toggleable tray instead of piling up. */
+function af31ArrangeControls(){
+ const controls=document.querySelector(".controls");
+ if(!controls||document.getElementById("af31More"))return;
+ const extras=document.createElement("div");extras.id="af31Extras";extras.hidden=true;
+ const more=document.createElement("button");more.id="af31More";more.type="button";
+ more.textContent="MORE";more.setAttribute("aria-expanded","false");
+ more.setAttribute("aria-controls","af31Extras");
+ more.addEventListener("click",()=>{
+  const expanded=extras.hidden;extras.hidden=!expanded;
+  more.setAttribute("aria-expanded",String(expanded));
+  more.textContent=expanded?"CLOSE":"MORE";
+ });
+ document.body.append(extras);
+ controls.after(more);
+ const core=new Set(["cast","ward","dodge","cycle"]);
+ const relocate=()=>{
+  for(const button of [...controls.querySelectorAll("button")]){
+   if(!core.has(button.id))extras.append(button);
+  }
+ };
+ relocate();
+ new MutationObserver(relocate).observe(controls,{childList:true});
+}
+af31ArrangeControls();
