@@ -728,3 +728,83 @@ button.af-button-pop{animation:af-button-press .34s cubic-bezier(.2,.8,.2,1)}
  #af31More{right:8px;width:118px}
  .nav button{padding:7px 5px!important;font-size:9px!important}
 }
+
+/* v3.2 mobile button layout: distinct rows, safe areas, and scrollable extra actions */
+.controls{
+  display:grid!important;
+  grid-template-columns:repeat(2, minmax(0,1fr))!important;
+  width:clamp(116px,35vw,148px)!important;
+  gap:8px!important;
+  right:calc(10px + env(safe-area-inset-right,0px))!important;
+  bottom:calc(132px + env(safe-area-inset-bottom,0px))!important;
+  align-items:stretch!important;
+}
+.controls>.action{
+  position:relative!important;
+  inset:auto!important;
+  width:100%!important;
+  min-width:0!important;
+  height:56px!important;
+  padding:5px 2px!important;
+  border-radius:13px!important;
+  font-size:clamp(9px,2.8vw,12px)!important;
+  line-height:1.15!important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#af31More{
+  box-sizing:border-box!important;
+  right:calc(10px + env(safe-area-inset-right,0px))!important;
+  bottom:calc(91px + env(safe-area-inset-bottom,0px))!important;
+  width:clamp(116px,35vw,148px)!important;
+  min-height:34px!important;
+}
+#af31Extras:not([hidden]){
+  box-sizing:border-box!important;
+  right:calc(10px + env(safe-area-inset-right,0px))!important;
+  bottom:calc(132px + env(safe-area-inset-bottom,0px))!important;
+  width:min(260px,calc(100vw - 20px))!important;
+  max-height:min(48dvh,360px)!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+  padding:12px!important;
+  z-index:95!important;
+}
+#af31Extras>.action{min-height:54px!important;height:auto!important;overflow-wrap:anywhere!important}
+.nav{
+  box-sizing:border-box!important;
+  left:50%!important;right:auto!important;
+  transform:translateX(-50%)!important;
+  bottom:calc(12px + env(safe-area-inset-bottom,0px))!important;
+  width:min(340px,calc(100vw - 20px))!important;
+  max-width:calc(100vw - 20px)!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:4px!important;
+  padding:5px!important;
+  z-index:65!important;
+}
+.nav button{min-width:0!important;white-space:nowrap!important;padding:10px 2px!important;font-size:clamp(10px,2.8vw,12px)!important;text-align:center!important}
+#stick{
+  left:calc(12px + env(safe-area-inset-left,0px))!important;
+  bottom:calc(115px + env(safe-area-inset-bottom,0px))!important;
+  width:clamp(90px,27vw,124px)!important;
+  height:clamp(90px,27vw,124px)!important;
+}
+#knob{width:42%!important;height:42%!important;left:29%!important;top:29%!important}
+#af30Open{top:calc(58px + env(safe-area-inset-top,0px))!important;right:10px!important}
+#af30Panel{overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+@media(min-width:720px){
+  .controls{width:148px!important;bottom:110px!important}
+  #af31More{width:148px!important;bottom:68px!important}
+  #af31Extras:not([hidden]){bottom:110px!important}
+  #stick{width:124px!important;height:124px!important;bottom:105px!important}
+}
+@media(max-height:620px) and (orientation:landscape){
+  .controls{bottom:75px!important}
+  .controls>.action{height:40px!important}
+  #af31More{bottom:35px!important}
+  #af31Extras:not([hidden]){bottom:75px!important;max-height:70dvh!important}
+  #stick{bottom:65px!important;width:85px!important;height:85px!important}
+  .nav{bottom:3px!important}
+}
