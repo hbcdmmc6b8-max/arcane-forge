@@ -1225,6 +1225,7 @@ function renderForge() {
         const style=document.createElement("small");
         style.className="af25ModelTag";style.textContent="FORGED MODEL "+((hash(name)%48)+1)+" / 48";
         button.append(style);
+        button.prepend(af26ForgePreview(name));
       }else if(magic.spellFamily){
         const style=document.createElement("small");style.className="af25ModelTag";
         style.textContent=magic.spellFamily.toUpperCase()+" • "+(magic.attackType||"projectile").toUpperCase();
@@ -5297,7 +5298,51 @@ function drawBossBody(enemy,color) {
   ctx.restore();
 }
 
+/* Forged magic has a consistent full character model, projectile model, and forge preview.
+   Seed is derived from the complete recipe/name, so every discovered forge gets
+   a repeatable combination of silhouette, armor, orbitals and sigil details. */
+function af26ForgedSeed(name){const magic=S.magic[name];return magic?.parents?.length&&!magic.spellFamily?hash(name+"|"+magic.parents.join("+"))>>>0:null;}
+function af26DrawAvatar(x,y,name,awakened,facing){
+ const seed=af26ForgedSeed(name);if(seed===null)return false;
+ const magic=S.magic[name],time=performance.now()*.001,r=awakened?20:16;
+ const armor=seed%9,helm=(seed>>>5)%11,wings=(seed>>>10)%7,orbit=(seed>>>15)%6,mark=(seed>>>19)%13;
+ ctx.save();ctx.translate(x,y);ctx.rotate(facing);ctx.shadowColor=magic.color;ctx.shadowBlur=awakened?27:14;
+ ctx.strokeStyle=magic.color;ctx.fillStyle=magic.color;ctx.lineWidth=2;
+ const poly=(points,fill=true)=>{ctx.beginPath();points.forEach(([a,b],i)=>i?ctx.lineTo(a,b):ctx.moveTo(a,b));ctx.closePath();if(fill)ctx.fill();ctx.stroke();};
+ for(let side of [-1,1]){
+  ctx.save();ctx.scale(side,1);
+  if(wings%3===0)poly([[r*.6,0],[r+12,-r-10],[r+18,-r*1.5],[r+10,5]],false);
+  else if(wings%3===1){for(let k=0;k<3;k++)poly([[r*.5,k*7-9],[r+13+k*3,k*6-18],[r+7,k*8-6]],false);}
+  else {ctx.beginPath();ctx.ellipse(r+8,0,4,16,-.3,0,Math.PI*2);ctx.stroke();}
+  ctx.restore();
+ }
+ const points=5+armor%5;
+ poly(Array.from({length:points},(_,i)=>{const a=-Math.PI/2+i*Math.PI*2/points;return [Math.cos(a)*(r+((i+armor)%3)*2),Math.sin(a)*(r+((i+armor)%3)*2)];}));
+ ctx.fillStyle="#101729";ctx.beginPath();ctx.arc(0,0,r*.57,0,Math.PI*2);ctx.fill();
+ ctx.strokeStyle="#ffffffcc";ctx.lineWidth=1.5;
+ for(let k=0;k<3+helm%5;k++){const a=k*Math.PI*2/(3+helm%5);ctx.beginPath();ctx.moveTo(Math.cos(a)*r*.7,Math.sin(a)*r*.7);ctx.lineTo(Math.cos(a)*(r+6),Math.sin(a)*(r+6));ctx.stroke();}
+ ctx.fillStyle=magic.color;
+ for(let k=0;k<2+mark%5;k++){const a=k*Math.PI*2/(2+mark%5)+time*.25;ctx.beginPath();ctx.arc(Math.cos(a)*r*.36,Math.sin(a)*r*.36,1.5+mark%3,0,Math.PI*2);ctx.fill();}
+ ctx.strokeStyle=magic.color;ctx.lineWidth=1.5;ctx.globalAlpha=.65;
+ for(let k=0;k<1+orbit%3;k++){ctx.beginPath();ctx.ellipse(0,0,r+8+k*6,(r+8+k*6)*(.32+(orbit%3)*.08),time*.4+k,0,Math.PI*2);ctx.stroke();}
+ ctx.restore();return true;
+}
+function af26ForgePreview(name){
+ const canvas=document.createElement("canvas");canvas.width=104;canvas.height=78;canvas.className="af26Preview";canvas.setAttribute("aria-label",name+" character model");
+ const original=ctx;
+ // Preview uses the same deterministic model without mutating the live game context.
+ const c=canvas.getContext("2d");if(!c)return canvas;
+ const seed=af26ForgedSeed(name)??hash(name),color=S.magic[name]?.color||"#b9a5ff";
+ c.translate(52,39);c.shadowColor=color;c.shadowBlur=12;c.strokeStyle=color;c.fillStyle=color;c.lineWidth=2;
+ const sides=5+seed%7;
+ c.beginPath();for(let i=0;i<sides;i++){const a=-Math.PI/2+i*2*Math.PI/sides;const r=i%2?17:26;i?c.lineTo(Math.cos(a)*r,Math.sin(a)*r):c.moveTo(Math.cos(a)*r,Math.sin(a)*r);}c.closePath();c.fill();
+ c.fillStyle="#0b1326";c.beginPath();c.arc(0,0,11,0,Math.PI*2);c.fill();
+ for(let i=0;i<3+(seed>>>7)%5;i++){const a=i*2*Math.PI/(3+(seed>>>7)%5);c.beginPath();c.moveTo(Math.cos(a)*28,Math.sin(a)*28);c.lineTo(Math.cos(a)*37,Math.sin(a)*37);c.stroke();}
+ return canvas;
+}
+
 function drawPlayerElement(x, y, magicName, awakened = false, facing = -Math.PI / 2) {
+  if(af26DrawAvatar(x,y,magicName,awakened,facing))return;
   const element = playerElement(magicName);
   const r = awakened ? 17 : 14;
   const t = performance.now() * .001;
