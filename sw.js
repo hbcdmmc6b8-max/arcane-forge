@@ -1,10 +1,11 @@
-const CACHE = "arcane-forge-v1.9";
+const CACHE = "arcane-forge-v3.3-ru";
 
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./script.js",
+  "./language.js",
   "./manifest.json"
 ];
 
