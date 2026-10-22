@@ -1226,6 +1226,20 @@ function renderForge() {
       : "No magic selected.";
 }
 
+/* Arcane Forge menu and forging animation effects */
+function af23ForgeAnimation(color){
+ const forge=document.getElementById("forgeModal");if(!forge)return;
+ forge.classList.remove("af-forge-flash");void forge.offsetWidth;forge.classList.add("af-forge-flash");
+ const fx=document.createElement("div");fx.className="af-forge-burst";fx.style.setProperty("--forge-color",/^#[0-9a-f]{3,8}$/i.test(color)?color:"#aa86ff");
+ fx.setAttribute("aria-hidden","true");forge.append(fx);
+ setTimeout(()=>{fx.remove();forge.classList.remove("af-forge-flash");},950);
+}
+document.addEventListener("click",e=>{
+ const button=e.target.closest("button");if(!button||window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+ button.classList.remove("af-button-pop");void button.offsetWidth;button.classList.add("af-button-pop");
+ setTimeout(()=>button.classList.remove("af-button-pop"),380);
+});
+
 function transmute() {
   if (S.dead) return;
 
@@ -1312,6 +1326,7 @@ function transmute() {
     );
   }
 
+  af23ForgeAnimation(color);
   S.selected = name;
   S.forge = [];
 
@@ -3429,8 +3444,11 @@ function af19MakeCreator(){
   S.magic[n]={color:color.value,traits:[af19Elements[element.value].trait],parents:secondary.value==="None"?[element.value]:[element.value,secondary.value],element:element.value,custom:true,customTraits:trait.value==="None"?[]:[trait.value],attackType:shape.value,powerMultiplier:p,awakeningName:awaken.value.slice(0,36),awakeningDuration:Math.max(3,Math.min(30,Number(duration.value)||12))};
   S.selected=n;saveGame();renderForge();updateHUD();notice("Custom magic forged: "+n);modal.style.display="none";
  };
- const open=document.createElement("button");open.textContent="CUSTOM MAGIC";open.style.cssText="position:fixed;left:10px;bottom:68px;z-index:1000;padding:10px;background:#50318d;color:white;border:1px solid #aa8fe0;border-radius:10px";
- open.onclick=()=>{name.value="";modal.style.display="block";refresh();};document.body.append(open);
+ const open=document.createElement("button");open.id="af19OpenCreator";open.className="primary af-forge-custom";open.textContent="✦ CUSTOM MAGIC CREATOR";
+ open.onclick=()=>{name.value="";modal.style.display="block";modal.classList.remove("af-reveal");void modal.offsetWidth;modal.classList.add("af-reveal");refresh();};
+ const forge=document.getElementById("forgeModal");const transmuteButton=document.getElementById("transmute");
+ if(forge&&transmuteButton)transmuteButton.insertAdjacentElement("afterend",open);
+ modal.querySelector("#af19Close").addEventListener("click",()=>modal.classList.remove("af-reveal"));
 }
 af19MakeCreator();
 
