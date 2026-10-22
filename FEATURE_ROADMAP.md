@@ -3,13 +3,13 @@
 This is an implementation plan, NOT a claim that the features are finished.
 
 ## Combat
-- [ ] 1. In-combat spell fusion: actual combined effects, cost and cooldown
-- [ ] 2. Custom awakenings: persisted loadouts, unique attacks and visuals
-- [ ] 3. Magic weapons: inventory, equip, animations and modifiers
-- [ ] 4. Personal dimensions: arena effects and rule handling
+- [x] 1. In-combat spell fusion: actual combined effects, cost and cooldown
+- [x] 2. Custom awakenings: persisted loadouts, unique attacks and visuals
+- [x] 3. Magic weapons: inventory, equip, animations and modifiers
+- [x] 4. Personal dimensions: arena effects and rule handling
 - [x] 5. Spell evolution: spell XP, tiers and unlocks
 - [x] 6. Counter magic: elemental interaction matrix
-- [ ] 7. Spell clashes: collision resolution and audiovisual effects
+- [x] 7. Spell clashes: collision resolution and audiovisual effects
 
 ## Multiplayer and social (require server validation)
 - [ ] 8. Ranked duels: matchmaking, results, ranks and anti-cheat
@@ -41,3 +41,6 @@ Each feature needs UI, gameplay, save/load, mobile layout, testing and (where ap
 
 ## Batch 1 notes (October 2026)
 Features 5, 6, 18, 19 and 20 have initial client-side gameplay implementations: spell XP and levels, elemental status counter multipliers, essence-based forge catalysts, Grimoire specializations, and hidden recipe discovery notices. These are first-pass systems, not production-complete; mobile QA, balance, persistence hardening, and server validation remain.
+
+## Batch 2 notes (October 2026)
+First-pass local implementations of 1, 2, 3, 4, 7: timed combat spell fusion, selectable awakening styles, purchasable/equippable weapon modifiers, timed personal dimensions and clashes with enemy projectiles. These do not yet include bespoke sprites for each weapon, authoritative multiplayer collision, advanced domain rules, or full QA. The weapon damage bonus currently reads the local player's equipped weapon on hit; multiplayer combat requires server-side authority.
