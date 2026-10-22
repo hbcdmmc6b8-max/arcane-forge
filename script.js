@@ -1137,9 +1137,9 @@ function awaken() {
 
   S.awakening = 0;
   S.awakened = true;
-  S.awakeningTime = 7;
+  S.awakeningTime = af28Loadout.awakening==="Sovereign"?9:af28Loadout.awakening==="Phantom"?6:7;
 
-  S.mana = Math.min(100,S.mana + 50);
+  S.mana = Math.min(100,S.mana + (af28Loadout.awakening==="Celestial"?75:50));
   playSfx("awaken",S.selected);
 
   const magic =
@@ -1170,7 +1170,7 @@ function awaken() {
   );
 
   notice(
-    "AWAKENING — " +
+    "AWAKENING — " +af28Loadout.awakening.toUpperCase()+" • "+
     awakeningName()
   );
 }
@@ -3486,7 +3486,7 @@ function af19Hit(enemy,shot){
  const primary=af19Elements[magic.element]||af19Elements[elements[0]]||{damage:22,trait:"push"};
  const traits=[...new Set([primary.trait,...elements.map(e=>af19Elements[e].trait),...(magic.customTraits||[])])];
  const power=Math.max(0.25,Math.min(3,Number(magic.powerMultiplier)||1));
- const damage=Math.round(primary.damage*power*(S.awakened?1.3:1)*(1+(af27Level(shot.magicName)-1)*.045)*(af27Upgrade(shot.magicName)==="power"?1.2:1)*af27Counter(enemy,shot));
+ const damage=Math.round(primary.damage*power*(S.awakened?1.3:1)*(1+(af27Level(shot.magicName)-1)*.045)*(af27Upgrade(shot.magicName)==="power"?1.2:1)*af27Counter(enemy,shot)*af28Weapon().damage*(performance.now()<af28DimensionUntil?1.2:1));
  hurtEnemy(enemy,damage,shot.color);
  const now=performance.now();
  enemy.af19Status=enemy.af19Status||{};
@@ -3607,11 +3607,75 @@ function af24ShowBarrierButton(){
 }
 af24SetupSecret();
 
+/* Expansion batch 2: local combat systems (1, 2, 3, 4, 7).
+   No network authority or PvP collision is implied by these mechanics. */
+const af28Weapons={
+ staff:{label:"Arcane Staff",cost:0,mana:.85,damage:1,speed:1},
+ blade:{label:"Rune Blade",cost:4,mana:1,damage:1.3,speed:.95},
+ gauntlets:{label:"Spell Gauntlets",cost:5,mana:1.1,damage:1.2,speed:1.25},
+ tome:{label:"Living Grimoire",cost:6,mana:.8,damage:1.1,speed:.9}
+};
+const af28Awakenings=["Sovereign","Phantom","Celestial"];
+const af28Dimensions=["Astral Sanctuary","Infernal Crucible","Frozen Cathedral"];
+const af28Loadout={weapon:"staff",awakening:"Sovereign",dimension:"Astral Sanctuary"};
+const af28Owned=new Set(["staff"]);
+try{Object.assign(af28Loadout,JSON.parse(localStorage.af28Loadout||"{}"));for(const id of JSON.parse(localStorage.af28Owned||"[]"))if(af28Weapons[id])af28Owned.add(id);}catch(_){}
+if(!af28Weapons[af28Loadout.weapon])af28Loadout.weapon="staff";
+if(!af28Awakenings.includes(af28Loadout.awakening))af28Loadout.awakening="Sovereign";
+if(!af28Dimensions.includes(af28Loadout.dimension))af28Loadout.dimension="Astral Sanctuary";
+let af28FusionUntil=0,af28FusionSpell="",af28DimensionUntil=0,af28DimensionCooldown=0;
+function af28Save(){try{localStorage.af28Loadout=JSON.stringify(af28Loadout);localStorage.af28Owned=JSON.stringify([...af28Owned]);}catch(_){}}
+function af28Weapon(){return af28Weapons[af28Loadout.weapon]||af28Weapons.staff;}
+function af28Fusion(){
+ if(S.dead)return;
+ const options=Object.keys(S.magic).filter(n=>n!==S.selected);
+ if(!options.length){notice("Discover another spell first");return;}
+ const other=options[(options.indexOf(af28FusionSpell)+1)%options.length];
+ if(S.mana<20){notice("Fusion needs 20 mana");return;}
+ S.mana-=20;af28FusionSpell=other;af28FusionUntil=performance.now()+9000;
+ burst(S.x,S.y,S.magic[other].color,30);
+ notice(S.selected+" + "+other+" • FUSION ACTIVE");
+}
+function af28Dimension(){
+ if(S.dead)return;
+ const now=performance.now();if(now<af28DimensionCooldown){notice("Dimension recharging");return;}
+ if(S.mana<45){notice("Dimension needs 45 mana");return;}
+ S.mana-=45;af28DimensionUntil=now+8000;af28DimensionCooldown=now+25000;
+ S.ward=Math.max(S.ward,160);
+ burst(S.x,S.y,S.magic[S.selected].color,85);notice(af28Loadout.dimension.toUpperCase()+" • DOMAIN OPEN");
+}
+function af28UI(){
+ const book=document.getElementById("bookModal");if(!book)return;
+ const panel=document.createElement("section");panel.className="af28Loadout";
+ const h=document.createElement("h3");h.textContent="COMBAT LOADOUT";panel.append(h);
+ const info=document.createElement("p");info.textContent="Equip a magic weapon, choose your awakening style and dimension.";panel.append(info);
+ const makeSelect=(label,entries,value,onchange)=>{
+  const wrap=document.createElement("label");wrap.textContent=label+" ";
+  const select=document.createElement("select");
+  for(const [id,text] of entries){const opt=document.createElement("option");opt.value=id;opt.textContent=text;select.append(opt);}
+  select.value=value;select.onchange=()=>onchange(select.value,select);wrap.append(select);panel.append(wrap);return select;
+ };
+ makeSelect("Weapon",Object.entries(af28Weapons).map(([id,w])=>[id,w.label+" ("+(af28Owned.has(id)?"owned":w.cost+" essence")+")"]),af28Loadout.weapon,(id,select)=>{
+  if(!af28Owned.has(id)){const cost=af28Weapons[id].cost;if(S.essence<cost){notice("Not enough essence");select.value=af28Loadout.weapon;return;}
+   S.essence-=cost;af28Owned.add(id);saveGame();updateHUD();notice("Weapon forged: "+af28Weapons[id].label);
+  }
+  af28Loadout.weapon=id;af28Save();
+ });
+ makeSelect("Awakening",af28Awakenings.map(x=>[x,x]),af28Loadout.awakening,id=>{af28Loadout.awakening=id;af28Save();});
+ makeSelect("Dimension",af28Dimensions.map(x=>[x,x]),af28Loadout.dimension,id=>{af28Loadout.dimension=id;af28Save();});
+ book.prepend(panel);
+ const controls=document.querySelector(".controls");if(controls){
+  const fusion=document.createElement("button");fusion.className="action af28Action";fusion.textContent="FUSE";fusion.title="Fuse a second spell into your casts for 9 seconds";fusion.onclick=af28Fusion;controls.append(fusion);
+  const domain=document.createElement("button");domain.className="action af28Action";domain.textContent="DOMAIN";domain.title="Open your selected dimension";domain.onclick=af28Dimension;controls.append(domain);
+ }
+}
+af28UI();
+
 function castSpell() {
   if (S.dead) return;
 
   const customMagic=S.magic[S.selected]||{};
-  const cost=Math.ceil((S.awakened?7:10)*Math.max(.5,Math.min(3,Number(customMagic.powerMultiplier)||1))*(af27Upgrade(S.selected)==="focus"?.8:1));
+  const cost=Math.ceil((S.awakened?7:10)*Math.max(.5,Math.min(3,Number(customMagic.powerMultiplier)||1))*(af27Upgrade(S.selected)==="focus"?.8:1)*af28Weapon().mana);
 
   if (
     S.mana < cost
@@ -3715,11 +3779,11 @@ function castSpell() {
 
       vx:
         sx *
-        (S.awakened ? 11 : 9)*(af27Upgrade(S.selected)==="speed"?1.3:1),
+        (S.awakened ? 11 : 9)*(af27Upgrade(S.selected)==="speed"?1.3:1)*af28Weapon().speed,
 
       vy:
         sy *
-        (S.awakened ? 11 : 9)*(af27Upgrade(S.selected)==="speed"?1.3:1),
+        (S.awakened ? 11 : 9)*(af27Upgrade(S.selected)==="speed"?1.3:1)*af28Weapon().speed,
 
       life:
         S.awakened
@@ -3739,7 +3803,8 @@ function castSpell() {
         S.selected,
 
       traits:
-        [...magic.traits]
+        [...magic.traits,...(performance.now()<af28FusionUntil&&S.magic[af28FusionSpell]?S.magic[af28FusionSpell].traits:[])],
+      fusion:performance.now()<af28FusionUntil?af28FusionSpell:null
     });
   }
 
