@@ -2086,7 +2086,7 @@ function spawnEnemy() {
     180;
 
   const typeName =
-    randomEnemyType();
+    af29Realm!=="Arcane"&&Math.random()<.55?af29Realms[af29Realm].enemy:randomEnemyType();
 
   const type =
     enemyTypes[typeName];
@@ -5623,6 +5623,59 @@ function drawPlayerElement(x, y, magicName, awakened = false, facing = -Math.PI 
   ctx.restore();
 }
 
+/* Batch 3: local prototypes for spectator camera, event creator, boss builder,
+   announcements and elemental realms. These do NOT publish to multiplayer servers. */
+const af29Realms={
+ Arcane:{color:"#172847",enemy:"Grunt"},
+ Ember:{color:"#452019",enemy:"Tank"},
+ Glacier:{color:"#193c55",enemy:"Runner"},
+ Tempest:{color:"#322c59",enemy:"Mage"},
+ Verdant:{color:"#193e30",enemy:"Dasher"}
+};
+let af29Realm="Arcane",af29Spectating=false,af29EventUntil=0,af29EventName="",af29Announcement="";
+const af29Boss={name:"Forged Sentinel",hp:500,damage:18,color:"#ad79ff"};
+try{const stored=JSON.parse(localStorage.af29Preferences||"{}");if(af29Realms[stored.realm])af29Realm=stored.realm;if(stored.boss){af29Boss.name=String(stored.boss.name||af29Boss.name).slice(0,30);af29Boss.hp=Math.max(100,Math.min(5000,Number(stored.boss.hp)||500));af29Boss.damage=Math.max(1,Math.min(60,Number(stored.boss.damage)||18));}}catch(_){}
+function af29Save(){try{localStorage.af29Preferences=JSON.stringify({realm:af29Realm,boss:af29Boss});}catch(_){}}
+function af29BossSpawn(){
+ if(S.dead){notice("Respawn first");return;}
+ const type=enemyTypes.Tank||Object.values(enemyTypes)[0];if(!type)return;
+ const hp=af29Boss.hp;
+ S.enemies.push({type:"Tank",x:S.x+320,y:S.y-110,hp,maxHp:hp,r:35,speed:1.1,damage:af29Boss.damage,color:af29Boss.color,xp:150,essence:4,ranged:false,dash:false,shieldType:false,leech:false,element:null,elite:true,boss:true,burn:0,slow:0,name:af29Boss.name});
+ notice("BOSS SPAWNED: "+af29Boss.name);
+}
+function af29ShowNotice(message){
+ const bar=document.getElementById("af29Banner");if(!bar)return;
+ bar.textContent=message;bar.hidden=false;
+ clearTimeout(af29ShowNotice.timer);
+ af29ShowNotice.timer=setTimeout(()=>{bar.hidden=true;},6000);
+}
+function af29Setup(){
+ const banner=document.createElement("div");banner.id="af29Banner";banner.hidden=true;banner.setAttribute("role","status");document.body.append(banner);
+ const panel=document.createElement("section");panel.id="af29Features";
+ const title=document.createElement("h3");title.textContent="WORLD & EVENTS • LOCAL SANDBOX";panel.append(title);
+ const note=document.createElement("p");note.textContent="These controls affect this browser only. Events, announcements and custom bosses are not broadcast to other players.";panel.append(note);
+ function control(label,el){const wrap=document.createElement("label");wrap.textContent=label;wrap.append(el);panel.append(wrap);return el;}
+ function btn(label,fn){const b=document.createElement("button");b.type="button";b.textContent=label;b.onclick=fn;panel.append(b);return b;}
+ const realm=document.createElement("select");
+ for(const name of Object.keys(af29Realms)){const o=document.createElement("option");o.value=name;o.textContent=name+" Realm";realm.append(o);}
+ realm.value=af29Realm;control("Elemental Realm",realm);
+ realm.onchange=()=>{af29Realm=realm.value;af29Save();S.enemies=[];S.enemyShots=[];af29ShowNotice("ENTERING "+af29Realm.toUpperCase()+" REALM");};
+ btn("Spectate nearest enemy",()=>{af29Spectating=!af29Spectating;af29ShowNotice(af29Spectating?"SPECTATOR CAMERA ON — TAP AGAIN TO EXIT":"SPECTATOR CAMERA OFF");});
+ const event=document.createElement("input");event.maxLength=50;event.placeholder="Event title";control("Live Event Name (local)",event);
+ btn("Start 60-second local event",()=>{af29EventName=event.value.trim()||"Arcane Surge";af29EventUntil=performance.now()+60000;af29ShowNotice("EVENT STARTED: "+af29EventName);});
+ const name=document.createElement("input");name.maxLength=30;name.value=af29Boss.name;control("Custom Boss Name",name);
+ const hp=document.createElement("input");hp.type="number";hp.min="100";hp.max="5000";hp.value=af29Boss.hp;control("Boss HP",hp);
+ const damage=document.createElement("input");damage.type="number";damage.min="1";damage.max="60";damage.value=af29Boss.damage;control("Boss Damage",damage);
+ btn("Spawn custom boss",()=>{af29Boss.name=name.value.trim().slice(0,30)||"Forged Sentinel";af29Boss.hp=Math.max(100,Math.min(5000,Number(hp.value)||500));af29Boss.damage=Math.max(1,Math.min(60,Number(damage.value)||18));af29Save();af29BossSpawn();});
+ const announcement=document.createElement("input");announcement.maxLength=140;announcement.placeholder="Your announcement";control("Announcement (local)",announcement);
+ btn("Show announcement",()=>{af29Announcement=announcement.value.trim();if(af29Announcement)af29ShowNotice("ANNOUNCEMENT: "+af29Announcement);});
+ const book=document.getElementById("bookModal");if(book)book.append(panel);
+ const controls=document.querySelector(".controls");if(controls){
+  const camera=document.createElement("button");camera.type="button";camera.className="action af29Camera";camera.textContent="CAMERA";camera.onclick=()=>{af29Spectating=!af29Spectating;notice(af29Spectating?"Spectator camera on":"Spectator camera off");};controls.append(camera);
+ }
+}
+af29Setup();
+
 function drawWorld() {
   ctx.clearRect(
     0,
@@ -5666,7 +5719,7 @@ function drawWorld() {
   else {
     background.addColorStop(
       0,
-      "#172847"
+      af29Realms[af29Realm].color
     );
 
     background.addColorStop(
@@ -5685,11 +5738,9 @@ function drawWorld() {
     vh
   );
 
-  const offsetX =
-    vw / 2 - S.x;
-
-  const offsetY =
-    vh / 2 - S.y;
+  const cameraTarget=af29Spectating?S.enemies.find(e=>e.hp>0):null;
+  const offsetX = vw / 2 - (cameraTarget?cameraTarget.x:S.x);
+  const offsetY = vh / 2 - (cameraTarget?cameraTarget.y:S.y);
 
   ctx.save();
 
