@@ -87,6 +87,7 @@ const dynamic=[
 [/^Contacting server…$/,()=> "Связь с сервером…"]
 ];
 const original=new WeakMap();
+const lastRendered=new WeakMap();
 let language="en";
 try{language=localStorage.getItem("afLanguage")==="ru"?"ru":"en";}catch(_){}
 const ignoredParents=new Set(["SCRIPT","STYLE","TEXTAREA","OPTION","CODE","PRE","CANVAS"]);
@@ -103,11 +104,12 @@ function walk(root){
   if(!parent||ignoredParents.has(parent.tagName)||parent.isContentEditable||parent.closest("[data-no-translate]"))return;
   const current=root.nodeValue||"";
   const prev=original.get(root);
-  if(prev===undefined|| (current!==prev&&current!==translate(prev)))original.set(root,current);
+  if(prev===undefined||current!==lastRendered.get(root))original.set(root,current);
   const source=original.get(root);
   const target=language==="ru"?translate(source):null;
   const expected=target===null?source:source.replace(source.trim(),target);
   if(root.nodeValue!==expected)root.nodeValue=expected;
+  lastRendered.set(root,expected);
   return;
  }
  if(root.nodeType!==1&&root.nodeType!==9)return;
