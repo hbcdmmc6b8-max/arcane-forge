@@ -1274,6 +1274,81 @@ document.addEventListener("click",e=>{
  setTimeout(()=>button.classList.remove("af-button-pop"),380);
 });
 
+/* Expansion batch 1/4: spell evolution, elemental counters, advanced forging,
+   skill trees, and secret discoveries. All local progression; no server authority claimed. */
+const af27Recipes=[
+ {parts:["Fire","Ice"],name:"Frostfire",reward:"Thermal Paradox"},
+ {parts:["Light","Shadow"],name:"Twilight",reward:"Eclipse Scholar"},
+ {parts:["Earth","Water"],name:"Nature",reward:"First Bloom"},
+ {parts:["Lightning","Water"],name:"Storm",reward:"Storm Chaser"}
+];
+const af27Catalysts={
+ none:{label:"No Catalyst",cost:0,bonus:0,trait:null},
+ ember:{label:"Ember Crystal",cost:2,bonus:.12,trait:"burn"},
+ prism:{label:"Prismatic Dust",cost:3,bonus:.18,trait:"energy"},
+ aegis:{label:"Aegis Stone",cost:4,bonus:.2,trait:"defense"}
+};
+let af27Catalyst="none";
+const af27SpellXP={};const af27Upgrades={};const af27Secrets=new Set();
+try{Object.assign(af27SpellXP,JSON.parse(localStorage.af27SpellXP||"{}"));Object.assign(af27Upgrades,JSON.parse(localStorage.af27Upgrades||"{}"));for(const v of JSON.parse(localStorage.af27Secrets||"[]"))af27Secrets.add(v);}catch(_){}
+function af27Persist(){
+ try{localStorage.af27SpellXP=JSON.stringify(af27SpellXP);localStorage.af27Upgrades=JSON.stringify(af27Upgrades);localStorage.af27Secrets=JSON.stringify([...af27Secrets]);}catch(_){}
+}
+function af27Level(name){return Math.min(10,1+Math.floor(Math.sqrt(Math.max(0,af27SpellXP[name]||0)/35)));}
+function af27Upgrade(name){return af27Upgrades[name]||"none";}
+function af27Learn(name){
+ const previous=af27Level(name);af27SpellXP[name]=(af27SpellXP[name]||0)+4;
+ if(af27Level(name)>previous)notice(name+" evolved to level "+af27Level(name)+"!");
+ af27Persist();
+}
+function af27Counter(enemy,shot){
+ const traits=new Set(shot.traits||[]);
+ const state=enemy.af19Status||{};
+ const now=performance.now();
+ if(traits.has("shock")&&state.wet?.until>now)return 1.45;
+ if(traits.has("heat")&&state.slow?.until>now)return 1.25;
+ if(traits.has("freeze")&&state.wet?.until>now)return 1.35;
+ if(traits.has("wet")&&state.burn?.until>now){state.burn.until=0;return 1.1;}
+ return 1;
+}
+function af27ForgeUI(){
+ const forge=document.getElementById("forgeModal"),button=document.getElementById("transmute");if(!forge||!button)return;
+ const label=document.createElement("label");label.className="af27Catalyst";
+ label.textContent="Forging Catalyst ";
+ const select=document.createElement("select");
+ for(const [id,c] of Object.entries(af27Catalysts)){const opt=document.createElement("option");opt.value=id;opt.textContent=c.label+" ("+c.cost+" essence)";select.append(opt);}
+ select.value=af27Catalyst;select.onchange=()=>af27Catalyst=select.value;
+ label.append(select);button.before(label);
+}
+function af27SkillsUI(){
+ const book=document.getElementById("bookModal");if(!book)return;
+ const section=document.createElement("section");section.id="af27SkillPanel";
+ section.innerHTML='<h3>MAGIC SKILL TREES</h3><p>Select a spell, then spend essence to specialize it.</p>';
+ const pick=document.createElement("select");pick.id="af27SkillPick";
+ const update=()=>{pick.replaceChildren();for(const name of Object.keys(S.magic).sort()){const opt=document.createElement("option");opt.value=name;opt.textContent=name+" · Lv "+af27Level(name);pick.append(opt);} };
+ const actions=document.createElement("div");actions.className="af27SkillActions";
+ const status=document.createElement("p");const render=()=>{const name=pick.value;status.textContent="Current: "+af27Upgrade(name)+" · Level "+af27Level(name)+" · XP "+(af27SpellXP[name]||0)+" · 3 essence per specialization";};
+ pick.onchange=render;
+ for(const [type,label] of [["power","Power +20%"],["speed","Faster Projectiles"],["focus","Mana Efficiency"]]){
+  const b=document.createElement("button");b.textContent=label;b.onclick=()=>{const name=pick.value;if(!name)return;
+   if(af27Level(name)<2){notice("Reach spell level 2 first");return;}
+   if(af27Upgrade(name)===type){notice("Already specialized");return;}
+   if(S.essence<3){notice("Need 3 essence");return;}
+   S.essence-=3;af27Upgrades[name]=type;af27Persist();saveGame();updateHUD();render();notice(name+" specialized: "+label);
+  };actions.append(b);
+ }
+ section.append(pick,actions,status);book.prepend(section);
+ const observer=new MutationObserver(()=>{if(book.classList.contains("open")){const prior=pick.value;update();if(S.magic[prior])pick.value=prior;render();}});
+ observer.observe(book,{attributes:true,attributeFilter:["class"]});update();render();
+}
+function af27Discover(parents){
+ const key=parents.join("+");
+ for(const secret of af27Recipes){if(secret.parts.slice().sort().join("+")!==key||af27Secrets.has(secret.reward))continue;
+  af27Secrets.add(secret.reward);af27Persist();notice("SECRET DISCOVERY: "+secret.reward);
+ }
+}
+af27ForgeUI();af27SkillsUI();
+
 function transmute() {
   if (S.dead) return;
 
@@ -1285,6 +1360,8 @@ function transmute() {
     return;
   }
 
+  const catalyst=af27Catalysts[af27Catalyst]||af27Catalysts.none;
+  if(S.essence<catalyst.cost){notice("Not enough essence for catalyst");return;}
   const parents =
     [...S.forge].sort();
 
@@ -1317,11 +1394,15 @@ function transmute() {
   }
 
   if (!S.magic[name]) {
+    if(catalyst.cost)S.essence-=catalyst.cost;
     S.magic[name] = {
       color,
-      traits,
-      parents
+      traits:[...new Set([...traits,...(catalyst.trait?[catalyst.trait]:[])])],
+      parents,
+      powerMultiplier:1+catalyst.bonus,
+      catalyst:af27Catalyst
     };
+    af27Discover(parents);
 
     S.essence++;
     S.xp +=
@@ -3405,7 +3486,7 @@ function af19Hit(enemy,shot){
  const primary=af19Elements[magic.element]||af19Elements[elements[0]]||{damage:22,trait:"push"};
  const traits=[...new Set([primary.trait,...elements.map(e=>af19Elements[e].trait),...(magic.customTraits||[])])];
  const power=Math.max(0.25,Math.min(3,Number(magic.powerMultiplier)||1));
- const damage=Math.round(primary.damage*power*(S.awakened?1.3:1));
+ const damage=Math.round(primary.damage*power*(S.awakened?1.3:1)*(1+(af27Level(shot.magicName)-1)*.045)*(af27Upgrade(shot.magicName)==="power"?1.2:1)*af27Counter(enemy,shot));
  hurtEnemy(enemy,damage,shot.color);
  const now=performance.now();
  enemy.af19Status=enemy.af19Status||{};
@@ -3530,7 +3611,7 @@ function castSpell() {
   if (S.dead) return;
 
   const customMagic=S.magic[S.selected]||{};
-  const cost=Math.ceil((S.awakened?7:10)*Math.max(.5,Math.min(3,Number(customMagic.powerMultiplier)||1)));
+  const cost=Math.ceil((S.awakened?7:10)*Math.max(.5,Math.min(3,Number(customMagic.powerMultiplier)||1))*(af27Upgrade(S.selected)==="focus"?.8:1));
 
   if (
     S.mana < cost
@@ -3543,6 +3624,7 @@ function castSpell() {
   }
 
   S.mana -= cost;
+  af27Learn(S.selected);
 
   addAwakening(3);
 
@@ -3633,11 +3715,11 @@ function castSpell() {
 
       vx:
         sx *
-        (S.awakened ? 11 : 9),
+        (S.awakened ? 11 : 9)*(af27Upgrade(S.selected)==="speed"?1.3:1),
 
       vy:
         sy *
-        (S.awakened ? 11 : 9),
+        (S.awakened ? 11 : 9)*(af27Upgrade(S.selected)==="speed"?1.3:1),
 
       life:
         S.awakened
