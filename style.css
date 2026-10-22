@@ -657,3 +657,11 @@ button.af-button-pop{animation:af-button-press .34s cubic-bezier(.2,.8,.2,1)}
 /* Full forged-character preview in the Forge selection grid */
 .af26Preview{display:block;width:100%;height:78px;object-fit:contain;margin:0 0 6px;border-radius:10px;background:radial-gradient(ellipse at center,#263052 0%,#0d1327 75%);border:1px solid #414c72}
 .af25ModelTag{display:block;margin-top:5px;font-size:10px;letter-spacing:.04em;color:#aebcf0}
+
+/* Expansion batch 2 loadout and combat actions */
+.af28Loadout{display:grid;gap:10px;padding:14px;margin-bottom:16px;border:1px solid #6b579e;border-radius:14px;background:#12172c}
+.af28Loadout h3,.af28Loadout p{margin:0}
+.af28Loadout label{display:grid;gap:5px;font-size:13px;color:#d6cfff}
+.af28Loadout select{width:100%;min-width:0;background:#202849;color:white;border:1px solid #6c79a9;border-radius:8px;padding:10px}
+.af28Action{background:linear-gradient(135deg,#3d276f,#624ca0);border:1px solid #b49bff;color:#fff}
+@media(max-width:600px){.controls{flex-wrap:wrap;gap:5px}.af28Action{font-size:11px;padding:8px}}
