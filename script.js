@@ -8458,3 +8458,116 @@ requestAnimationFrame(
 );
 
 })();
+
+/* Expansion six: authenticated online services. Requires supabase/expansion_6.sql.
+   All privileged actions are authorized again in database RPCs. */
+const af30={lastCommand:0,room:null,freezeUntil:0};
+async function af30Rpc(name,args={}){
+ if(!supabaseClient)throw Error("Supabase unavailable");
+ const result=await supabaseClient.rpc(name,args);
+ if(result.error)throw Error(result.error.message);
+ return result.data;
+}
+function af30El(tag,label,container,kind){
+ const el=document.createElement(tag);
+ if(tag==="input"){el.placeholder=label;if(kind)el.type=kind;}
+ else if(tag==="button")el.textContent=label;
+ else if(tag==="h3"||tag==="p")el.textContent=label;
+ if(container)container.append(el);return el;
+}
+function af30Panel(){
+ const overlay=document.createElement("div");overlay.id="af30Overlay";overlay.hidden=true;
+ const panel=document.createElement("section");panel.id="af30Panel";overlay.append(panel);
+ const close=af30El("button","CLOSE",panel);close.onclick=()=>overlay.hidden=true;
+ const header=af30El("h3","ONLINE EXPANSION",panel);
+ const status=af30El("p","Sign in to use online features. SQL migration required.",panel);
+ const area=document.createElement("div");area.id="af30Area";panel.append(area);
+ const menu=document.createElement("div");menu.id="af30Menu";panel.insertBefore(menu,area);
+ const btn=(host,label,fn)=>{const b=af30El("button",label,host);b.onclick=fn;return b;};
+ const input=(host,label,type)=>af30El("input",label,host,type);
+ const out=(message)=>{status.textContent=String(message);};
+ const run=async(fn)=>{try{out("Contacting server…");await fn();}catch(e){out("Server: "+e.message);}};
+ function page(title){area.replaceChildren();af30El("h3",title,area);}
+ btn(menu,"DUELS",()=>{page("Confirmed Duels");const opponent=input(area,"Opponent account UUID");
+ btn(area,"Challenge",()=>run(async()=>{const id=await af30Rpc("af_exp_duel_challenge",{opponent_id:opponent.value.trim()});out("Duel #"+id+" challenged");}));
+ const list=document.createElement("div");area.append(list);
+ btn(area,"Refresh duels",()=>run(async()=>{const rows=await af30Rpc("af_exp_duel_list");list.replaceChildren();
+ for(const d of rows||[]){const card=af30El("div","#"+d.id+" • "+d.state+" • "+d.challenger+" vs "+d.opponent,list);
+  for(const action of d.state==="pending"?["accept","cancel"]:d.state==="accepted"?["report","cancel"]:d.state==="reported"?["confirm"]:[]){
+   btn(card,action.toUpperCase(),()=>run(async()=>{const winner=action==="report"||action==="confirm"?prompt("Winner account UUID",d.winner||d.challenger):null;
+    await af30Rpc("af_exp_duel_action",{duel_id:d.id,decision:action,winner_id:winner||null});out("Duel updated");}));
+  }
+ }}));});
+ btn(menu,"GUILDS",()=>{page("Guilds");const name=input(area,"Guild name (3–32 characters)");
+ btn(area,"Create guild",()=>run(async()=>{const id=await af30Rpc("af_exp_guild_create",{guild_name:name.value.trim()});out("Created guild #"+id);}));
+ btn(area,"Join guild",()=>run(async()=>{await af30Rpc("af_exp_guild_join",{guild_name:name.value.trim()});out("Joined guild");}));
+ btn(area,"Leave guild",()=>run(async()=>{await af30Rpc("af_exp_guild_leave");out("Left guild");}));
+ btn(area,"My guild",()=>run(async()=>{out(JSON.stringify(await af30Rpc("af_exp_guild_status")));}));});
+ btn(menu,"TRADING",()=>{page("Server Token Trading");af30El("p","Trades transfer server-owned primordial spell tokens, not locally forged spells.",area);
+ btn(area,"Claim starter tokens (once)",()=>run(async()=>{await af30Rpc("af_exp_claim_starter");out("Starter tokens claimed");}));
+ btn(area,"My token inventory",()=>run(async()=>out(JSON.stringify(await af30Rpc("af_exp_inventory_list")))));
+ const buyer=input(area,"Buyer account UUID");const give=input(area,"Offer spell: Fire, Water…");const want=input(area,"Request spell");
+ btn(area,"Offer trade",()=>run(async()=>{const id=await af30Rpc("af_exp_trade_offer",{buyer_id:buyer.value.trim(),give_spell:give.value.trim(),want_spell:want.value.trim()});out("Trade #"+id+" offered");}));
+ const inbox=document.createElement("div");area.append(inbox);
+ btn(area,"Refresh trade inbox",()=>run(async()=>{const rows=await af30Rpc("af_exp_trade_inbox");inbox.replaceChildren();
+ for(const t of rows||[]){const line=af30El("p","#"+t.id+" • "+t.offered+" for "+t.requested+" from "+t.seller,inbox);
+ btn(inbox,"Accept #"+t.id,()=>run(async()=>{await af30Rpc("af_exp_trade_accept",{trade_id:t.id});out("Trade completed");}));}
+ if(!rows?.length)af30El("p","No pending trades",inbox);
+ }));});
+ btn(menu,"CO-OP RAIDS",()=>{page("Shared Boss Raid");af30El("p","Join a multiplayer room first. Each signed-in player can deal 100 raid damage every 2 seconds.",area);
+ btn(area,"Start or join raid",()=>run(async()=>{if(!multiplayerRoom)throw Error("Join a room first");await af30Rpc("af_exp_raid_start",{room_code:multiplayerRoom});out("Raid ready in "+multiplayerRoom);}));
+ btn(area,"Attack raid boss",()=>run(async()=>{if(!multiplayerRoom)throw Error("Join a room first");const hp=await af30Rpc("af_exp_raid_hit",{room_code:multiplayerRoom});out("Boss HP: "+hp);}));
+ btn(area,"Raid status",()=>run(async()=>{if(!multiplayerRoom)throw Error("Join a room first");out(JSON.stringify(await af30Rpc("af_exp_raid_status",{room_code:multiplayerRoom})));}));});
+ btn(menu,"STAFF DASHBOARD",()=>{page("Staff Audit Dashboard");
+ btn(area,"Load moderation audit",()=>run(async()=>{const role=await af30Rpc("af_my_staff_role");if(!["owner","admin","mod"].includes(role))throw Error("Staff only");
+ const rows=await af30Rpc("af_exp_staff_audit");area.querySelectorAll(".af30Audit").forEach(n=>n.remove());
+ for(const row of rows||[]){const p=af30El("p",row.created_at+" • "+row.action+" • "+row.target_id+" • "+row.reason,area);p.className="af30Audit";}
+ out("Audit loaded: "+(rows?.length||0)+" records");}));});
+ btn(menu,"OWNER SERVER CONTROL",()=>{page("Live Server Control");af30El("p","Verified owner only. Select an active Arcane Forge room. All actions are logged, rate-limited and limited to safe values.",area);
+ const room=input(area,"Six-character room code");
+ const rooms=document.createElement("div");area.append(rooms);
+ btn(area,"List active rooms",()=>run(async()=>{const rows=await af30Rpc("af_exp_rooms_list");rooms.replaceChildren();
+ for(const r of rows||[]){btn(rooms,r.code+" ("+r.players+" players)",()=>{room.value=r.code;});}out((rows||[]).length+" active rooms");}));
+ const target=input(area,"Optional target account UUID");
+ const payload=input(area,"Message / realm / boss count");
+ const actions=[["announcement","Announcement"],["heal","Heal"],["mana","Restore mana"],["respawn","Force respawn"],["freeze","Freeze (10 sec)"],["unfreeze","Unfreeze"],["spawn_bosses","Spawn bosses (1–20)"],["clear_enemies","Clear enemies"],["realm","Set realm"],["event","Start event"],["stop_event","Stop event"]];
+ const select=document.createElement("select");for(const [value,label] of actions){const opt=document.createElement("option");opt.value=value;opt.textContent=label;select.append(opt);}area.append(select);
+ btn(area,"SEND OWNER COMMAND",()=>run(async()=>{const action=select.value;const code=room.value.trim().toUpperCase();
+ if(["respawn","freeze","spawn_bosses","clear_enemies"].includes(action)&&!confirm("This action affects active players in room "+code+". Continue?"))return;
+ const id=await af30Rpc("af_exp_owner_command",{room_code:code,command_action:action,command_payload:payload.value.trim(),target_user:target.value.trim()||null});
+ out("Command #"+id+" queued for room "+code);}));
+ });
+ const opener=document.createElement("button");opener.id="af30Open";opener.textContent="ONLINE FEATURES";opener.onclick=()=>{overlay.hidden=false;out("Select a feature. Sign in required.");};
+ document.body.append(opener,overlay);
+}
+function af30Apply(command,userId){
+ if(command.target_id&&command.target_id!==userId)return;
+ const action=command.action,p=command.payload||"";
+ if(action==="announcement"){af29ShowNotice("SERVER: "+p);}
+ else if(action==="heal"){S.hp=Math.min(100,S.hp+50);}
+ else if(action==="mana"){S.mana=Math.min(100,S.mana+50);}
+ else if(action==="respawn"){respawn();}
+ else if(action==="freeze"){af30.freezeUntil=performance.now()+10000;notice("OWNER: FROZEN FOR 10 SECONDS");}
+ else if(action==="unfreeze"){af30.freezeUntil=0;}
+ else if(action==="spawn_bosses"){const count=Math.max(1,Math.min(20,Number(p)||1));for(let i=0;i<count;i++)af29BossSpawn();}
+ else if(action==="clear_enemies"){S.enemies.length=0;S.enemyShots.length=0;}
+ else if(action==="realm"&&af29Realms[p]){af29Realm=p;af29ShowNotice("REALM: "+p);}
+ else if(action==="event"){af29EventName=p||"Owner Event";af29EventUntil=performance.now()+60000;af29ShowNotice("EVENT: "+af29EventName);}
+ else if(action==="stop_event"){af29EventUntil=0;af29ShowNotice("EVENT ENDED");}
+ updateHUD();
+}
+async function af30Poll(){
+ if(!multiplayerRoom||!supabaseClient)return;
+ const room=multiplayerRoom;
+ try{
+  await af30Rpc("af_exp_heartbeat",{room_code:room});
+  if(af30.room!==room){af30.room=room;af30.lastCommand=0;}
+  const user=await supabaseClient.auth.getUser();
+  if(!user.data?.user)return;
+  const commands=await af30Rpc("af_exp_read_commands",{room_code:room,after_id:af30.lastCommand});
+  if(multiplayerRoom!==room)return;
+  for(const c of commands||[]){af30.lastCommand=Math.max(af30.lastCommand,Number(c.id));af30Apply(c,user.data.user.id);}
+ }catch(e){if(!af30.warned){console.warn("Expansion backend unavailable:",e.message);af30.warned=true;}}
+}
+af30Panel();
+setInterval(af30Poll,3500);
