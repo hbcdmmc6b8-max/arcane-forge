@@ -8583,6 +8583,19 @@ function af31ArrangeControls(){
  });
  document.body.append(extras);
  controls.after(more);
+ // POWER was created as a standalone fixed button with inline coordinates.
+ // Move it into the extra-actions tray so it cannot overlap CAST / WARD.
+ const power=document.getElementById("power");
+ if(power){
+  power.classList.add("action");
+  power.style.position="static";
+  power.style.right="auto";
+  power.style.bottom="auto";
+  power.style.width="100%";
+  power.style.height="auto";
+  power.style.zIndex="auto";
+  extras.prepend(power);
+ }
  const core=new Set(["cast","ward","dodge","cycle"]);
  const relocate=()=>{
   for(const button of [...controls.querySelectorAll("button")]){
