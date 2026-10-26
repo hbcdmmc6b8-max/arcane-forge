@@ -8618,3 +8618,25 @@ function af31ArrangeControls(){
  new MutationObserver(relocate).observe(controls,{childList:true});
 }
 af31ArrangeControls();
+
+/* Multi-touch action dispatch: keep joystick pointer captured independently,
+   fire action on touch-down instead of waiting for a synthesized tap/click.
+   Native mouse and keyboard click behavior is unchanged. */
+(()=>{
+ const lastTouch=new WeakMap();
+ document.addEventListener("pointerdown",event=>{
+  if(event.pointerType!=="touch")return;
+  const button=event.target.closest("button");
+  if(!button||button.disabled||!button.matches(".controls button,#af31Extras button,#af31More,.nav button,#power"))return;
+  lastTouch.set(button,performance.now());
+  event.preventDefault();
+  button.click();
+ },{capture:true,passive:false});
+ document.addEventListener("click",event=>{
+  if(!event.isTrusted)return;
+  const button=event.target.closest("button");
+  if(button&&performance.now()-(lastTouch.get(button)||-10000)<450){
+   event.preventDefault();event.stopImmediatePropagation();
+  }
+ },true);
+})();
