@@ -1721,6 +1721,7 @@ if (stick) {
       joystickPointer =
         event.pointerId;
 
+      if(stick.setPointerCapture)stick.setPointerCapture(event.pointerId);
       event.preventDefault();
 
       updateJoystick(
@@ -2590,6 +2591,7 @@ function generatedPower(magic) {
 
 function usePower() {
   if (S.dead || performance.now()<af30.freezeUntil) return;
+  if(typeof af32Gojo!=="undefined" && af32Gojo.active){af32GojoCast("red");return;}
 
   if (
     S.powerCooldown > 0
@@ -3673,6 +3675,7 @@ af28UI();
 
 function castSpell() {
   if (S.dead || performance.now()<af30.freezeUntil) return;
+  if(typeof af32Gojo!=="undefined" && af32Gojo.active){af32GojoCast("blue");return;}
 
   const customMagic=S.magic[S.selected]||{};
   const cost=Math.ceil((S.awakened?7:10)*Math.max(.5,Math.min(3,Number(customMagic.powerMultiplier)||1))*(af27Upgrade(S.selected)==="focus"?.8:1)*af28Weapon().mana);
@@ -6265,7 +6268,8 @@ function af25DrawForgedModel(shot){
     /* V1.8 equipped rank cosmetics */
     if (typeof v18DrawAura === "function") v18DrawAura(S.x, S.y);
 
-    drawPlayerElement(
+    if(typeof af32Gojo!=="undefined"&&af32Gojo.active)af32DrawGojo(S.x,S.y,playerFacing);
+    else drawPlayerElement(
       S.x,
       S.y,
       S.selected,
@@ -7988,6 +7992,7 @@ async function v18ShowAdmin(){
       entries.push({label:"LAB WORLD DIRECTOR",node:v18OwnerButton("WORLD DIRECTOR • PRIVATE",()=>v18OwnerLabPage("world"))});
       entries.push({label:"LAB ENEMY DIRECTOR",node:v18OwnerButton("ENEMY DIRECTOR • PRIVATE",()=>v18OwnerLabPage("enemies"))});
       entries.push({label:"LAB PRESET VAULT",node:v18OwnerButton("PRESET VAULT • PRIVATE",()=>v18OwnerLabPage("presets"))});
+      entries.push({label:"GOJO CHARACTER",node:v18OwnerButton("GOJO • OWNER CHARACTER",()=>af32GojoOwnerPage())});
       entries.push({label:"COMBAT DIRECTOR",node:v18OwnerButton("COMBAT DIRECTOR • LOCAL",()=>afOwnerExtras("combat"))});
       entries.push({label:"BOSS DIRECTOR",node:v18OwnerButton("BOSS DIRECTOR • LOCAL",()=>afOwnerExtras("boss"))});
       entries.push({label:"MAGIC WORKSHOP",node:v18OwnerButton("MAGIC WORKSHOP • LOCAL",()=>afOwnerExtras("magic"))});
