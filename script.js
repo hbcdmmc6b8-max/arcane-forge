@@ -6301,6 +6301,7 @@ function af25DrawForgedModel(shot){
     }
   }
 
+  if(typeof af32Gojo!=="undefined")af32DrawEffects();
   ctx.restore();
 
   /* AWAKENING TEXT */
@@ -6631,6 +6632,7 @@ if (desktopMode) {
   ========================= */
 
   function desktopCast() {
+    if(typeof af32Gojo!=="undefined"&&af32Gojo.active){af32GojoCast("blue");return;}
     if (S.dead) {
       return;
     }
