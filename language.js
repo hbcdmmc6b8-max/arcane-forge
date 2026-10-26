@@ -144,26 +144,29 @@ function walk(root){
   }
  }
 }
-const switcher=document.createElement("button");
-switcher.type="button";switcher.id="langSwitch";
-switcher.setAttribute("aria-label","Change language / Сменить язык");
+function syncSetting(){
+ const select=document.getElementById("afLanguageSetting");
+ if(!select)return;
+ if(select.dataset.afBound!=="true"){
+  select.dataset.afBound="true";
+  select.addEventListener("change",()=>{
+   language=select.value==="ru"?"ru":"en";
+   try{localStorage.setItem("afLanguage",language);}catch(_){}
+   apply();
+  });
+ }
+ if(select.value!==language)select.value=language;
+}
 function apply(){
  document.documentElement.lang=language;
- switcher.textContent=language==="ru"?"EN":"РУ";
- switcher.title=language==="ru"?"Switch to English":"Переключить на русский";
+ syncSetting();
  walk(document.body);
 }
-switcher.onclick=()=>{
- language=language==="en"?"ru":"en";
- try{localStorage.setItem("afLanguage",language);}catch(_){}
- apply();
-};
-document.body.append(switcher);
 let pending=false;
 const observer=new MutationObserver(()=>{
  if(pending)return;
  pending=true;
- queueMicrotask(()=>{pending=false;walk(document.body);});
+ queueMicrotask(()=>{pending=false;syncSetting();walk(document.body);});
 });
 observer.observe(document.body,{subtree:true,childList:true,characterData:true});
 apply();
