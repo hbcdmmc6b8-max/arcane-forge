@@ -915,3 +915,19 @@ html,body{overflow:hidden}
 @media(max-height:550px) and (orientation:landscape){
  #af30Open{top:calc(72px + env(safe-area-inset-top,0px))!important}
 }
+
+/* Restore ONLINE FEATURES to its original upper-right HUD position. */
+#af30Open{
+ top:calc(55px + env(safe-area-inset-top,0px))!important;
+ right:calc(12px + env(safe-area-inset-right,0px))!important;
+ font-size:10px!important;padding:8px!important
+}
+/* Language is now only in Settings, not a floating HUD button. */
+#langSwitch{display:none!important}
+#af32Purple[hidden]{display:none!important}
+.controls button,.nav button,#af31Extras button,#af31More,#power{
+ touch-action:manipulation!important;-webkit-user-select:none!important;user-select:none!important
+}
+@media(max-height:550px) and (orientation:landscape){
+ #af30Open{top:39px!important}
+}
