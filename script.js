@@ -7581,6 +7581,11 @@ document.getElementById("v18Back").addEventListener("click", () => {
 });
 function v18Settings() {
   v18Body.innerHTML = `
+    <label style="display:grid;gap:8px;margin:15px 0">LANGUAGE / ЯЗЫК
+      <select id="afLanguageSetting" style="width:100%;padding:12px;border-radius:10px;background:#202942;color:white;border:1px solid #a1a3db;touch-action:manipulation">
+        <option value="en">English</option><option value="ru">Русский</option>
+      </select>
+    </label>
     <label style="display:block;margin:15px 0">SFX <strong id="v18SfxValue"></strong><input id="v18Sfx" type="range" min="0" max="1" step="0.001" style="display:block;width:100%;margin-top:9px;touch-action:pan-x"></label>
     <label style="display:block;margin:15px 0">MUSIC <strong id="v18MusicValue"></strong><input id="v18Music" type="range" min="0" max="1" step="0.01" style="display:block;width:100%;margin-top:9px;touch-action:pan-x"></label>
     <p style="font-size:12px;color:#adb5d5">Original synthesized exploration and boss loops. Music starts after you tap PLAY or enable it here.</p><button id="v18MusicStart" class="menuButton" style="width:100%">START MUSIC</button>
