@@ -1395,6 +1395,7 @@ function transmute() {
 
   if (!S.magic[name]) {
     if(catalyst.cost)S.essence-=catalyst.cost;
+    if(typeof af33RecordForge==="function")af33RecordForge();
     S.magic[name] = {
       color,
       traits:[...new Set([...traits,...(catalyst.trait?[catalyst.trait]:[])])],
@@ -2265,6 +2266,7 @@ function hurtEnemy(
 
   if (damage > 0) {
     enemy.hp -= damage;
+    if(typeof af33RecordDamage==="function")af33RecordDamage(damage);
   }
 
   if (color) {
