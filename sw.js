@@ -1,4 +1,4 @@
-const CACHE = "arcane-forge-v3.4-gojo";
+const CACHE = "arcane-forge-v3.5-forge-awakens";
 
 const ASSETS = [
   "./",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./script.js",
   "./language.js",
   "./gojo.js",
+  "./update.js",
   "./manifest.json"
 ];
 
