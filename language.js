@@ -65,7 +65,7 @@ const pairs=[
 ["STAFF MODERATION","МОДЕРАЦИЯ"],["APPLY MODERATION","ПРИМЕНИТЬ МЕРУ"],
 ["BACK","НАЗАД"],["SPAWN ENEMY","СОЗДАТЬ ВРАГА"],["SPAWN BOSS","СОЗДАТЬ БОССА"],
 ["CLEAR ARENA","ОЧИСТИТЬ АРЕНУ"],["POWER","СИЛА"],
-["Arcane Forge","Аркейн Фордж"]
+["WHAT'S NEW","ЧТО НОВОГО"],["NEW UPDATE • 3.5","ОБНОВЛЕНИЕ • 3.5"],["CHANGELOG","ИСТОРИЯ ИЗМЕНЕНИЙ"],["DAILY CHALLENGES","ЕЖЕДНЕВНЫЕ ЗАДАНИЯ"],["BATTLE STATS","СТАТИСТИКА БОЯ"],["CLAIM REWARD","ПОЛУЧИТЬ НАГРАДУ"],["CLAIMED","ПОЛУЧЕНО"],["Arcane Assault","Магический штурм"],["Forge Master","Мастер кузницы"],["Spell Collector","Коллекционер заклинаний"],["Total damage dealt","Всего нанесено урона"],["Successful new forges","Успешных созданий магии"],["Discovered magic schools","Открыто школ магии"],["Current rank","Текущий ранг"],["Arcane Forge","Аркейн Фордж"]
 ];
 const dict=new Map(pairs);
 const placeholder=new Map([
